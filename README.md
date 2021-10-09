@@ -1,3 +1,4 @@
+[![Unit Test & Deploy](https://github.com/skojaku/residual2vec/actions/workflows/main.yml/badge.svg)](https://github.com/skojaku/residual2vec/actions/workflows/main.yml)
 # Residual2Vec: Debiasing graph embedding using random graphs
 
 This repository contains the code for
