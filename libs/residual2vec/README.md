@@ -4,6 +4,11 @@
 
 residual2vec is an algorithm to embed networks to a vector space while controlling for various structural properties such as degree. If you use this package, please cite:
 
+- S. Kojaku, J. Yoon, I. Constantino, and Y.-Y. Ahn, Residual2Vec: Debiasing graph embedding using random graphs. NerurIPS (2021). [link will be added when available]
+
+- Preprint (arXiv): [link to arXiv]
+
+- BibTex entry:
 ```latex
 @inproceedings{kojaku2021neurips,
  title={Residual2Vec: Debiasing graph embedding using random graphs},
