@@ -4,7 +4,19 @@ Usage:
 
 ```python
 import residual2vec as rv
+
 model = rv.residual2vec(window_length = 10, group_membership = None)
+model.fit(G)
+emb = model.transform(dim = 64)
+# or equivalently emb = mode.fit(G).transform(dim = 64)
+```
+
+If want to remove the structural bias associated with node labels (i.e., gender):
+```python
+import residual2vec as rv
+
+group_membership = [0,0,0,0,1,1,1,1] # an array of group memberships of nodes.
+model = rv.residual2vec(window_length = 10, group_membership = group_membership)
 model.fit(G)
 emb = model.transform(dim = 64)
 ```
@@ -48,9 +60,13 @@ class residual2vec:
 
         self.window_length = window_length
         self.num_blocks = num_blocks
-        self.group_membership = np.unique(group_membership, return_inverse=True)[
-            1
-        ]  # reindexing
+
+        if group_membership is None:
+            self.group_membership = None
+        else:
+            self.group_membership = np.unique(group_membership, return_inverse=True)[
+                1
+            ]  # reindex
 
         self.U = None  # Residual In-vector
         self.alpha = 0.5  # Loading of the singular values.
@@ -73,9 +89,15 @@ class residual2vec:
         else:
             ghat = np.arange(A.shape[0])
 
+        if self.group_membership is None:
+            self.group_membership = np.zeros(A.shape[0], dtype=int)
+
         # Construct the truncated residual2vec
         self.truncated_R = _truncated_residual_matrix(
-            ghat, self.group_membership, self.window_length
+            A,
+            group_ids=ghat,
+            group_ids_null=self.group_membership,
+            window_length=self.window_length,
         )
 
         return self
@@ -92,7 +114,7 @@ class residual2vec:
         svd = TruncatedSVD(n_components=dim, algorithm="randomized")
         svd.fit(self.truncated_R.T)
         U, lam = svd.components_, svd.singular_values_
-        U = U @ np.diag(np.power(lam, self.alpha))
+        U = U.T @ np.diag(np.power(lam, self.alpha))
 
         order = np.argsort(lam)[::-1]
         self.U = U[:, order]
@@ -148,7 +170,7 @@ def _find_blocks_by_sbm(A, K, directed=False):
     return np.array(cids).reshape(-1)
 
 
-def _truncated_residual_matrix(self, A, group_ids, group_ids_null, window_length):
+def _truncated_residual_matrix(A, group_ids, group_ids_null, window_length):
     """Compute the truncated residual matrix using the block approximation.
 
     :param A: Adjacency matrix
@@ -211,14 +233,15 @@ def _truncated_residual_matrix(self, A, group_ids, group_ids_null, window_length
 
     h1 = (
         utils.safe_log(
-            sparse.csr_matrix(P_node2g_Psbm_pow) @ sparse.diag(1 / np.maximum(Din))
+            sparse.csr_matrix(P_node2g_Psbm_pow)
+            @ sparse.diags(1 / np.maximum(1e-32, Din))
         )
         @ g2pair
     )
     h2 = (
         utils.safe_log(
             sparse.csr_matrix(node2gnull_Psbm_null_pow)
-            @ sparse.diag(1 / np.maximum(Din_null))
+            @ sparse.diags(1 / np.maximum(1e-32, Din_null))
         )
         @ gnull2pair
     )
