@@ -55,18 +55,16 @@ class residual2vec:
             >>> out_vec = model.transform(net, dim = 30, return_out_vector=True)
         """
 
-        if group_membership is not None:
-            num_blocks = np.maximum(num_blocks, len(set(group_membership)))
-
-        self.window_length = window_length
-        self.num_blocks = num_blocks
-
         if group_membership is None:
             self.group_membership = None
         else:
             self.group_membership = np.unique(group_membership, return_inverse=True)[
                 1
             ]  # reindex
+            num_blocks = np.maximum(num_blocks, len(set(group_membership)))
+
+        self.window_length = window_length
+        self.num_blocks = num_blocks
 
         self.U = None  # Residual In-vector
         self.alpha = 0.5  # Loading of the singular values.
