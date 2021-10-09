@@ -1,0 +1,4 @@
+faiss
+numba
+scikit-learn
+scipy
