@@ -8,7 +8,7 @@ import residual2vec as rv
 model = rv.residual2vec(window_length = 10, group_membership = None)
 model.fit(G)
 emb = model.transform(dim = 64)
-# or equivalently emb = mode.fit(G).transform(dim = 64)
+# or equivalently emb = model.fit(G).transform(dim = 64)
 ```
 
 If want to remove the structural bias associated with node labels (i.e., gender):
