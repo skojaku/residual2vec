@@ -1,4 +1,4 @@
-faiss
+faiss-cpu
 numpy
 scikit-learn
 scipy
