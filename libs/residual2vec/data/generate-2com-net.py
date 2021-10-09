@@ -8,7 +8,7 @@ from scipy import sparse, stats
 
 cave, cdiff = (
     100,
-    20,
+    80,
 )  # average degree and difference betw. inter-/intra-community edges
 n = 500
 output_file = "edges.csv"
