@@ -46,8 +46,8 @@ model.fit(G)
 emb = model.transform(dim = 64)
 # or equivalently emb = model.fit(G).transform(dim = 64)
 ```
-
+- `G`: adjacency matrix of the input graph. [numpy.array](https://numpy.org/doc/stable/reference/generated/numpy.array.html) or [scipy.sparse.csr_matrix](https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html) can be accepted.
 - `window_length`: the length of context window.
 - `group_membership`: an array of node labels. Used to debias the structural bias correlated with the node labels.
 - `dim`: Dimension of the embedding
-- `emb`: 2D numpy array of shape (`N`, `dim`), where `N` is the number of nodes. The $i$th row in the array represents the embedding vector of node $i$.
+- `emb`: 2D numpy array of shape (`N`, `dim`), where `N` is the number of nodes. The `i`th row in the array (i.e., `emb[i, :]`) represents the embedding vector of the `i`th node in the given adjacency matrix `G`.
