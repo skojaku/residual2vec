@@ -22,7 +22,7 @@ jobs:
       - name: Unit Test
         working-directory: ./libs/residual2vec
         run: |
-          python -m unittest tests/simple_test.py
+          python -m unittest tests/test.py
       - name: Build python package
         working-directory: libs/residual2vec
         run: |
