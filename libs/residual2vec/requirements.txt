@@ -1,4 +1,4 @@
 faiss
-numba
+numpy
 scikit-learn
 scipy
