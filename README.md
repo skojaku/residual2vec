@@ -21,9 +21,10 @@ This repository contains the code for
 ```
 
 
-## Code for `residual2vec`
+## Installation and Usage of `residual2vec` package
 
-The code for `residual2vec` sits in `libs/residual2vec/`. See the `README.txt` in the diretory for details.
+The code for `residual2vec` sits in [libs/residual2vec](libs/residual2vec). See the [README](libs/residual2vec/README.md) in the diretory for details.
+
 
 ## Reproducing the results
 
