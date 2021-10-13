@@ -1,6 +1,7 @@
 import os
 import sys
 
+sys.path.append(os.path.abspath(os.path.join("./libs/graph_embeddings")))
 import graph_embeddings
 import numpy as np
 import pandas as pd

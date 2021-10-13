@@ -40,7 +40,8 @@ PPI_NET_MAT_FORMAT = j(LP_DIR, "preprocessed", "ppi.mat")
 # Splitting the edges into train and test sets
 #
 split_params = {
-    "index": range(30),  # number of testing
+    "index": range(1),
+    #"index": range(30),
     "frac": 0.5,  # fraction of edges removed
     "directed": "undirected",  # directed and undireced netwoek must be sperated.
 }
@@ -67,7 +68,6 @@ emb_params = {
         "residual2vec",
         "netmf",
         "leigenmap",
-        "residual2vec-truncated",
         "graphsage",
         "gat",
         "gcn",
@@ -124,7 +124,8 @@ LFR_PARAM_FILE = j(
 LFR_PARAMS = {
     "mu": ["%.2f" % x for x in np.linspace(0.05, 1, 20)],
     "param_id": ["%d" % x for x in [0, 1]],
-    "sample_id": ["%d" % x for x in np.arange(30)],
+    "sample_id": ["%d" % x for x in np.arange(5)],
+    #"sample_id": ["%d" % x for x in np.arange(30)],
 }
 
 #
@@ -140,7 +141,6 @@ LFR_EMB_PARAMS = {
         "residual2vec",
         "netmf",
         "leigenmap",
-        "residual2vec-truncated",
         "graphsage",
         "gcn",
         "gat",
@@ -192,7 +192,8 @@ FIGS += [BA_RESULT_FIG]
 #
 rule all:
     input:
-        FIGS,
+        LP_RESULT_FIG, LP_RESULT_SI_FIG,
+        #FIGS,
 
 
 # =================
@@ -238,7 +239,7 @@ rule mat2edgelist:
 
 rule download_from_netzschleuder:
     params:
-        url=lambda wildcards: LP_DATA_SRC[wildcards.network],
+        net_name=lambda wildcards: wildcards.network,
     output:
         output_file=LP_EDGE_LIST_FILE,
     wildcard_constraints:

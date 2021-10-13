@@ -148,7 +148,9 @@ def _find_blocks_by_sbm(A, K, directed=False):
         return cids
 
     # Embed the nodes using the eigen-decomposition of the adjacency matrix.
-    u, s, v = utils.rSVD(A, dim=K)
+    svd = TruncatedSVD(n_components=dim, algorithm="randomized")
+    svd.fit(A)
+    u, s = svd.components_.T, svd.singular_values_
     if directed:
         u = np.hstack([u, v])
 

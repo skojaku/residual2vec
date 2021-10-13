@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 
 # Science genome lib
-from science_genome.network_train_test_splitter import NetworkTrainTestSplitterWithMST
+sys.path.append(os.path.abspath(os.path.join("./libs/link_prediction")))
+from link_prediction.network_train_test_splitter import NetworkTrainTestSplitterWithMST
 from scipy import sparse
 
 #
