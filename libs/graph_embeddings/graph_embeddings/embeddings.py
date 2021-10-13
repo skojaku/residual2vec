@@ -149,7 +149,9 @@ class Node2Vec(NodeEmbeddings):
             if "%d" % i not in self.model.wv:
                 continue
             self.in_vec[i, :] = self.model.wv["%d" % i]
-            self.out_vec[i, :] = self.model.syn1neg[self.model.wv.vocab["%d" % i].index]
+            self.out_vec[i, :] = self.model.syn1neg[
+                self.model.wv.key_to_index["%d" % i]
+            ]
 
 
 class DeepWalk(Node2Vec):
