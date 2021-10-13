@@ -435,7 +435,7 @@ rule test_sbm_trans_prob_approx:
     output:
         output_file=BA_RES_FILE,
     script:
-        "workflow/test-sbm-approximation.py"
+        "workflow/test-block-approximation.py"
 
 
 rule plot_sbm_trans_prob_approx:
