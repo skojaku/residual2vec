@@ -122,7 +122,8 @@ LFR_PARAM_FILE = j(
 )
 
 LFR_PARAMS = {
-    "mu": ["%.2f" % x for x in np.linspace(0.05, 1, 20)],
+    "mu": ["%.2f" % x for x in np.linspace(0.05, 1, 5)],
+    #"mu": ["%.2f" % x for x in np.linspace(0.05, 1, 20)],
     "param_id": ["%d" % x for x in [0, 1]],
     "sample_id": ["%d" % x for x in np.arange(5)],
     #"sample_id": ["%d" % x for x in np.arange(30)],
@@ -192,8 +193,7 @@ FIGS += [BA_RESULT_FIG]
 #
 rule all:
     input:
-        LP_RESULT_FIG, LP_RESULT_SI_FIG,
-        #FIGS,
+        FIGS,
 
 
 # =================
@@ -356,10 +356,10 @@ rule generate_lfr_net:
         output_community_file=LFR_COMMUNITY_FILE,
         output_param_file=LFR_PARAM_FILE,
     params:
-        param_id=lambda wildcards: wildcards.param_id,
+        param_id=lambda wildcards: int(wildcards.param_id),
         mu=lambda wildcards: wildcards.mu,
     script:
-        "workflow/generate-lfr-net.py {input} {params.param_id} {params.mu} {output}"
+        "workflow/generate-lfr-net.py"
 
 
 #
