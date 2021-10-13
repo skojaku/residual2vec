@@ -308,6 +308,13 @@ rule plot_result_link_prediction_SI:
         "workflow/plot_result_link_prediction-gcn-graphsage.py"
 
 
+#
+# LFR bechmark
+#
+
+rule setup_lfr_benchmark_generator:
+    shell:
+        "wget -qO- https://sites.google.com/site/andrealancichinetti/files/binary_networks.tar.gz?attredirects=0&d=1 | tar xvz - C libs/lfr_benchmark/lfr_benchmark/lfr_generator"
 
 ##
 ## LFR Benchmark

@@ -303,7 +303,7 @@ class NetMF(NodeEmbeddings):
     Alias of LevyWord2Vec
     """
 
-    def __init__(self, window_length, num_neg_samples=1, h=256, **params):
+    def __init__(self, window_length=10, num_neg_samples=1, h=256, **params):
         self.in_vec = None  # In-vector
         self.out_vec = None  # Out-vector
         self.window_length = window_length
