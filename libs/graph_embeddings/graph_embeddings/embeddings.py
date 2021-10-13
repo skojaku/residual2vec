@@ -109,7 +109,7 @@ class Node2Vec(NodeEmbeddings):
         self.w2vparams = {
             "sg": 1,
             "min_count": 0,
-            "iter": 1,
+            "epochs": 1,
             "workers": 4,
         }
 
@@ -139,7 +139,7 @@ class Node2Vec(NodeEmbeddings):
             self.sampler.walks, self.sampler.window_length
         )
 
-        self.w2vparams["size"] = dim
+        self.w2vparams["vector_size"] = dim
         self.model = gensim.models.Word2Vec(sentences=self.sentences, **self.w2vparams)
 
         num_nodes = len(self.model.wv.index2word)
@@ -155,12 +155,8 @@ class Node2Vec(NodeEmbeddings):
 class DeepWalk(Node2Vec):
     def __init__(self, **params):
         Node2Vec.__init__(self, **params)
-        self.w2vparams = {
-            "sg": 0,
-            "hs": 1,
-            "min_count": 0,
-            "workers": 4,
-        }
+        self.w2vparams["sg"] = 0
+        self.w2vparams["hs"] = 1
 
 
 class Glove:

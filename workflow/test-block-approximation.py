@@ -1,30 +1,16 @@
+import os
 import sys
 
-import graph_tool.all as gt
-import matplotlib.pyplot as plt
-import networkx as nx
 import numpy as np
 import pandas as pd
-from residual_node2vec import utils
 from scipy import sparse
 from sklearn import metrics
 
+sys.path.append(os.path.abspath(os.path.join("./libs/residual2vec")))
+from residual2vec.residual2vec import _find_blocks_by_sbm
 
-def find_blocks_by_sbm(A, K, directed=False):
-    def scipy_to_graph_tool(adj, directed=False):
-        g = gt.Graph(directed=directed)
-        edge_weights = g.new_edge_property("double")
-        g.edge_properties["weight"] = edge_weights
-        r, c, v = sparse.find(adj)
-
-        g.add_edge_list(
-            np.vstack([r, c, v]).T, eprops=[edge_weights],
-        )
-        return g
-
-    g = scipy_to_graph_tool(A, directed)
-    state = gt.minimize_blockmodel_dl(g, deg_corr=True, B_min=K, B_max=K)
-    return np.array(state.get_blocks().a)
+sys.path.append(os.path.abspath(os.path.join("./libs/graph_embeddings")))
+from graph_embeddings import utils
 
 
 def log_trans_prob(A, window_length, restart_prob=0):
@@ -45,7 +31,7 @@ def approx_log_trans_prob(
         return [[logP]]
 
     K = np.ceil(np.power(A.shape[0], beta)).astype(int)
-    cids = find_blocks_by_sbm(A, K, directed=directed)
+    cids = _find_blocks_by_sbm(A, K, directed=directed)
 
     num_nodes = A.shape[0]
     num_coms = np.max(cids) + 1

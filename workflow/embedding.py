@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from scipy import sparse
 
+sys.path.append(os.path.abspath(os.path.join("./libs/residual2vec")))
 import residual2vec
 
 #
