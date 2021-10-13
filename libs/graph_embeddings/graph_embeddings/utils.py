@@ -21,7 +21,10 @@ def calc_cum_trans_prob(A):
 
 # @numba.jit(nopython=True, parallel=True)
 def _calc_cum_trans_prob(
-    A_indptr, A_indices, A_data_, num_nodes,  # should be cumulative
+    A_indptr,
+    A_indices,
+    A_data_,
+    num_nodes,  # should be cumulative
 ):
     A_data = A_data_.copy()
     for i in range(num_nodes):
@@ -44,7 +47,9 @@ def sample_columns_from_cum_prob(rows, A_indptr, A_indices, A_data):
 
         # find a neighbor by a roulette selection
         _ind = np.searchsorted(
-            A_data[A_indptr[r] : A_indptr[r + 1]], np.random.rand(), side="right",
+            A_data[A_indptr[r] : A_indptr[r + 1]],
+            np.random.rand(),
+            side="right",
         )
         retvals[i] = A_indices[A_indptr[r] + _ind]
     return retvals
