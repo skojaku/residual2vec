@@ -234,7 +234,9 @@ def eval_clu(com_file, df):
     return results
 
 
-list_results = [eval_clu(com_file, df) for com_file, df in tqdm(file_table.groupby("com_file"))]
+list_results = [
+    eval_clu(com_file, df) for com_file, df in tqdm(file_table.groupby("com_file"))
+]
 
 #
 # Merge
