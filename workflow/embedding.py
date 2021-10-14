@@ -147,7 +147,6 @@ elif model_name == "lndeg":  # fake embedding. Just to save offset
 #
 model.fit(sparse.csr_matrix(net))
 emb = model.transform(dim=dim)
-out_emb = model.transform(dim=dim, return_out_vector=True)
 
 try:
     offset = model.node_offset
@@ -160,7 +159,6 @@ except AttributeError:
 np.savez(
     embfile,
     emb=emb,
-    out_emb=out_emb,
     membership=membership,
     offset=offset,
     window_length=window_length,

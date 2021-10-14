@@ -8,7 +8,6 @@ import pandas as pd
 
 # import residual_node2vec as rv
 import utils_link_pred
-from joblib import Parallel, delayed
 from scipy import sparse
 from sklearn.metrics import roc_auc_score
 from tqdm import tqdm
@@ -118,7 +117,7 @@ def calc_modeled_prob(emb, net, src, trg, model_name, membership, offset):
 
 
 dg = file_table[
-    file_table["model"].isin(["residual2vec", "glove", "residual2vec-truncated"])
+    file_table["model"].isin(["residual2vec", "glove"])
 ]
 dg["model"] += "-dotsim"
 file_table = pd.concat([file_table, dg], ignore_index=True)
@@ -150,10 +149,10 @@ def eval_link_pred(edge_file, df):
             emb, net, src, trg, row["model"], membership, node_offset
         )
 
-        node_offset = (
-            np.log(np.maximum(1, np.array(net[:, :n][:n, :].sum(axis=0)))).reshape(-1)
-            * node_offset
-        )
+#        node_offset = (
+#            np.log(np.maximum(1, np.array(net[:, :n][:n, :].sum(axis=0)))).reshape(-1)
+#            * node_offset
+#        )
 
         if any(np.isnan(likelihood)):
             score = 0.5
@@ -164,11 +163,7 @@ def eval_link_pred(edge_file, df):
     return results
 
 
-# list_results = Parallel(n_jobs=1)(
-list_results = Parallel(n_jobs=30)(
-    delayed(eval_link_pred)(edge_file, df)
-    for edge_file, df in tqdm(file_table.groupby("edge_file"))
-)
+list_results = [eval_link_pred(edge_file, df) for edge_file, df in tqdm(file_table.groupby("edge_file"))]
 
 
 #

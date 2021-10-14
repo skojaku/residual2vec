@@ -58,7 +58,7 @@ result_table = result_table[result_table.param_id.isin(param_ids)]
 # Rename
 #
 method_labels = {
-    "residual2vec-truncated": "r2v-config",
+    "residual2vec": "r2v-config",
     "node2vec": "node2vec ($q=1$)",
     "node2vec-qhalf": "node2vec ($q=0.5$)",
     "node2vec-qdouble": "node2vec ($q=2$)",
@@ -70,7 +70,7 @@ method_labels = {
     "graphsage": "GraphSAGE",
 }
 method_labels = {
-    "residual2vec-truncated": "r2v-config",
+    "residual2vec": "r2v-config",
     "node2vec": "node2vec (q=1)",
     "node2vec-qhalf": "node2vec ($q=0.5$)",
     "node2vec-qdouble": "node2vec ($q=2$)",
@@ -112,7 +112,7 @@ cmap_gcn = sns.light_palette(
     sns.color_palette("Set2", desat=0.7).as_hex()[3], n_colors=6
 )
 model2color = {
-    "residual2vec-truncated": "red",
+    "residual2vec": "red",
     "node2vec": cmap_rw[5],
     "node2vec-qhalf": cmap_rw[3],
     "node2vec-qdouble": cmap_rw[1],
@@ -126,7 +126,7 @@ model2color = {
     "gat": cmap_gcn[3],
 }
 model2markeredgecolor = {
-    "residual2vec-truncated": "k",
+    "residual2vec": "k",
     "node2vec": "k",
     "node2vec-qhalf": "#8d8d8d",
     "node2vec-qdouble": "w",
@@ -140,7 +140,7 @@ model2markeredgecolor = {
     "gat": "k",
 }
 model2marker = {
-    "residual2vec-truncated": "s",
+    "residual2vec": "s",
     "node2vec": "s",
     "node2vec-qhalf": "o",
     "node2vec-qdouble": "D",
@@ -155,7 +155,7 @@ model2marker = {
 }
 
 model2ls = {  # line style
-    "residual2vec-truncated": "-",
+    "residual2vec": "-",
     "node2vec": "-",
     "node2vec-qhalf": ":",
     "node2vec-qdouble": "-.",
@@ -297,33 +297,3 @@ sns.despine(right=False)
 g.fig.savefig(
     output_zoomed_file, dpi=300, bbox_extra_artists=[lgd, t1], bbox_inches="tight"
 )
-
-# %%
-
-# %%
-#
-# Calculate the performance grain
-#
-
-# Calculate the mean score
-score_table = (
-    result_table.groupby(["model", "dim", "tau", "metric", "mu"])
-    .agg("mean")["score"]
-    .reset_index()
-)
-score_table
-# %%
-
-
-# Split
-ref_table = score_table[score_table["model"] == "residual2vec-truncated"].copy()
-ref_table = ref_table.rename(columns={"score": "score_base"}).drop(columns="model")
-
-df = pd.merge(score_table, ref_table, on=["dim", "tau", "metric", "mu"])
-df["gain"] = np.round(100 * df["score"] / df["score_base"])
-
-df = df[df.mu.between(0.3, 0.5)]
-
-df.groupby(["model", "net"]).agg("mean")
-
-# %%

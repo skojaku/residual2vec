@@ -122,7 +122,7 @@ g.map(sns.lineplot, "mu", "score", ci="sd")
 
 ax = g.axes.flat[1]
 handles, labels = ax.get_legend_handles_labels()
-ax.legend(
+lgd = ax.legend(
     handles,
     labels,
     loc="upper left",

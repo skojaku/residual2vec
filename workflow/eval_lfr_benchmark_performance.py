@@ -1,11 +1,9 @@
 # %% import library
 import pathlib
 
-import emlens
 import faiss
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed
 from scipy import sparse, stats
 from sklearn import metrics
 from sklearn.cluster import KMeans
@@ -230,30 +228,13 @@ def eval_clu(com_file, df):
                     "ij,i->ij", X, 1 / np.maximum(np.linalg.norm(X, axis=1), 1e-12)
                 )
             score = auc_pred_groups(X, y, iterations=1)
-            #            kmeans = KMeans(n_clusters=K).fit(X)
-            #            ypred = kmeans.labels_
-            #            km_nmi = calc_nmi(y, ypred)
-            #            km_esim = calc_esim(y, ypred)
-            #
-            #            f1score = emlens.f1_score(emb, y, k=10, metric=metric)
-            #            nmi = emlens.nmi(emb, y, k=10, metric=metric)
-            #            esim = emlens.element_sim(emb, y, k=10, metric=metric)
-            #
-            #            row["f1score"] = f1score
-            #            row["nmi"] = nmi
-            #            row["esim"] = esim
-            #            row["km_nmi"] = km_nmi
-            #            row["km_esim"] = km_esim
             row["auc"] = score
             row["metric"] = metric
             results += [row]
     return results
 
 
-list_results = Parallel(n_jobs=30)(
-    delayed(eval_clu)(com_file, df)
-    for com_file, df in tqdm(file_table.groupby("com_file"))
-)
+list_results = [eval_clu(com_file, df) for com_file, df in tqdm(file_table.groupby("com_file"))]
 
 #
 # Merge

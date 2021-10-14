@@ -46,8 +46,8 @@ data_labels = {
 result_table["netName"] = result_table["net"].map(data_labels)
 
 method_labels = {
-    "residual2vec-truncated": "r2v-config (w/ offset)",
-    "residual2vec-truncated-dotsim": "r2v-config (w/o offset)",
+    "residual2vec": "r2v-config (w/ offset)",
+    "residual2vec-dotsim": "r2v-config (w/o offset)",
     "node2vec": "node2vec (q=1)",
     "node2vec-qhalf": "node2vec ($q=0.5$)",
     "node2vec-qdouble": "node2vec ($q=2$)",
@@ -90,8 +90,8 @@ cmap_gcn = sns.light_palette(
     sns.color_palette("Set2", desat=0.7).as_hex()[3], n_colors=6
 )
 model2color = {
-    "residual2vec-truncated": "red",
-    "residual2vec-truncated-dotsim": sns.light_palette("red", n_colors=5)[1],
+    "residual2vec": "red",
+    "residual2vec-dotsim": sns.light_palette("red", n_colors=5)[1],
     "node2vec": cmap_rw[5],
     "node2vec-qhalf": cmap_rw[3],
     "node2vec-qdouble": cmap_rw[1],
@@ -107,8 +107,8 @@ model2color = {
     "lndeg": "#afafaf",
 }
 model2markeredgecolor = {
-    "residual2vec-truncated": "k",
-    "residual2vec-truncated-dotsim": "#8d8d8d",
+    "residual2vec": "k",
+    "residual2vec-dotsim": "#8d8d8d",
     "node2vec": "k",
     "node2vec-qhalf": "#8d8d8d",
     "node2vec-qdouble": "w",
@@ -124,8 +124,8 @@ model2markeredgecolor = {
     "lndeg": "k",
 }
 model2marker = {
-    "residual2vec-truncated": "s",
-    "residual2vec-truncated-dotsim": "o",
+    "residual2vec": "s",
+    "residual2vec-dotsim": "o",
     "node2vec": "s",
     "node2vec-qhalf": "o",
     "node2vec-qdouble": "D",
@@ -142,8 +142,8 @@ model2marker = {
 }
 
 model2ls = {  # line style
-    "residual2vec-truncated": "-",
-    "residual2vec-truncated-dotsim": ":",
+    "residual2vec": "-",
+    "residual2vec-dotsim": ":",
     "node2vec": "-",
     "node2vec-qhalf": ":",
     "node2vec-qdouble": "-.",

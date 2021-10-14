@@ -22,8 +22,8 @@ rc("text", usetex=True)
 # parameterize
 
 # %% tags=["parameters"]
-res_file = "../data/link-prediction/results/auc_score.csv"
-output_file = "../figs/result-link-prediction-gcn-graphsage.pdf"
+res_file = snakemake.input["res_file"]
+output_file = snakemake.output["output_file"]
 
 # %% [markdown]
 # Data

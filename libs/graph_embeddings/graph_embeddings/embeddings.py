@@ -142,7 +142,7 @@ class Node2Vec(NodeEmbeddings):
         self.w2vparams["vector_size"] = dim
         self.model = gensim.models.Word2Vec(sentences=self.sentences, **self.w2vparams)
 
-        num_nodes = len(self.model.wv.index2word)
+        num_nodes = len(self.model.wv.key_to_index)
         self.in_vec = np.zeros((num_nodes, dim))
         self.out_vec = np.zeros((num_nodes, dim))
         for i in range(num_nodes):

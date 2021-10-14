@@ -40,7 +40,7 @@ PPI_NET_MAT_FORMAT = j(LP_DIR, "preprocessed", "ppi.mat")
 # Splitting the edges into train and test sets
 #
 split_params = {
-    "index": range(1),
+    "index": range(5),
     # "index": range(30),
     "frac": 0.5,  # fraction of edges removed
     "directed": "undirected",  # directed and undireced netwoek must be sperated.
@@ -125,7 +125,7 @@ LFR_PARAMS = {
     "mu": ["%.2f" % x for x in np.linspace(0.05, 1, 5)],
     # "mu": ["%.2f" % x for x in np.linspace(0.05, 1, 20)],
     "param_id": ["%d" % x for x in [0, 1]],
-    "sample_id": ["%d" % x for x in np.arange(5)],
+    "sample_id": ["%d" % x for x in np.arange(10)],
     # "sample_id": ["%d" % x for x in np.arange(30)],
 }
 
@@ -222,8 +222,8 @@ rule download_ppi_net_in_mat_format:
         output_file=PPI_NET_MAT_FORMAT,
     shell:
         r"""
-                        wget {params.url} -O {output.output_file}
-                        """
+        wget {params.url} -O {output.output_file}
+        """
 
 
 rule mat2edgelist:
