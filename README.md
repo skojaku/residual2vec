@@ -27,7 +27,7 @@ This repository contains the code for
 ```bash
 pip install residual2vec
 ```
-The code and instruction for `residual2vec` sits in [libs/residual2vec](libs/residual2vec). See the [here](libs/residual2vec/README.md).
+The code and instruction for `residual2vec` sits in [libs/residual2vec](libs/residual2vec). See [here](libs/residual2vec/README.md).
 
 
 # Reproducing the results
