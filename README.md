@@ -5,7 +5,7 @@ This repository contains the code for
 
 - S. Kojaku, J. Yoon, I. Constantino, and Y.-Y. Ahn, Residual2Vec: Debiasing graph embedding using random graphs. NerurIPS (2021). [link will be added when available]
 
-- Preprint (arXiv): [link to arXiv]
+- Preprint (arXiv): https://arxiv.org/abs/2110.07654
 
 - BibTex entry:
 ```latex
@@ -22,12 +22,15 @@ This repository contains the code for
 ```
 
 
-## Installation and Usage of `residual2vec` package
+# Installation and Usage of `residual2vec` package
 
-The code for `residual2vec` sits in [libs/residual2vec](libs/residual2vec). See the [README](libs/residual2vec/README.md) in the diretory for details.
+```bash
+pip install residual2vec
+```
+The code and instruction for `residual2vec` sits in [libs/residual2vec](libs/residual2vec). See the [here](libs/residual2vec/README.md).
 
 
-## Reproducing the results
+# Reproducing the results
 
 We set up Snakemake workflow to reproduce our results. To this end, install [snakemake](https://snakemake.readthedocs.io/en/stable/) and run
 
