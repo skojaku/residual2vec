@@ -148,21 +148,22 @@ def _find_blocks_by_sbm(A, K, directed=False):
         return cids
 
     # Embed the nodes using the eigen-decomposition of the adjacency matrix.
-    u, s, v = utils.rSVD(A, dim=K)
-    if directed:
-        u = np.hstack([u, v])
+    svd = TruncatedSVD(n_components=K, algorithm="randomized")
+    svd.fit(A)
+    u, s = svd.components_.T, svd.singular_values_
 
     # Normlize to have unit norm for spherical clustering
     u = np.einsum("ij,i->ij", u, 1 / np.maximum(1e-12, np.linalg.norm(u, axis=1)))
+    u = u.copy(order="C")
 
     if (u.shape[0] / K) < 10:
         niter = 1
     else:
         niter = 10
 
-    km = faiss.Kmeans(u.shape[1], K, niter=niter, spherical=True)
-    km.train(u)
-    _, cids = km.index.search(u, 1)
+    km = faiss.Kmeans(d=u.shape[1], k=int(K), niter=niter, spherical=True)
+    km.train(u.astype(np.float32))
+    _, cids = km.index.search(u.astype(np.float32), 1)
     cids = np.array(cids).reshape(-1)
 
     return np.array(cids).reshape(-1)
