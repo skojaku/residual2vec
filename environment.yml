@@ -1,4 +1,5 @@
-name: residual2vec
+name: rnode2vec
+#name: residual2vec
 channels:
   - stellargraph
   - bioconda

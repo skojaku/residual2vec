@@ -109,15 +109,61 @@ class residual2vec:
         :rtype: numpy.ndarray of shape (num_nodes, dim), where num_nodes is the number of nodes.
           Each ith row in the array corresponds to the embedding of the ith node.
         """
-        svd = TruncatedSVD(n_components=dim, algorithm="randomized")
-        svd.fit(self.truncated_R.T)
-        U, lam = svd.components_, svd.singular_values_
-        U = U.T @ np.diag(np.power(lam, self.alpha))
+        in_vec, val, out_vec = rSVD(self.truncated_R, dim)
 
-        order = np.argsort(lam)[::-1]
-        self.U = U[:, order]
+        order = np.argsort(val)[::-1]
+        val = val[order]
+        self.in_vec = in_vec[:, order] @ np.diag(np.power(val, self.alpha))
+        self.out_vec = out_vec[order, :].T @ np.diag(np.power(val, 1 - self.alpha))
+        return self.in_vec
 
-        return U
+
+#        svd = TruncatedSVD(n_components=dim, algorithm="randomized")
+#        svd.fit(self.truncated_R.T)
+#        U, lam = svd.components_, svd.singular_values_
+#        U = U.T @ np.diag(np.power(lam, self.alpha))
+#
+#        order = np.argsort(lam)[::-1]
+#        self.U = U[:, order]
+#
+#        return U
+
+
+def rSVD(X, r, p=10, q=1):
+    """Randomized SVD.
+
+    Parameters
+    ----------
+    X : scipy.csr_sparse_matrix
+        Matrix to decompose
+    r : int
+        Rank of decomposed matrix
+    p : int (Optional; Default p = 5)
+        Oversampling
+    q : int (Optional; Default q = 1)
+        Number of power iterations
+
+    Return
+    ------
+    U : numpy.ndrray
+        Left singular vectors of size (X.shape[0], r)
+    lams : numpy.ndarray
+        Singular values of size (r,)
+    V : numpy.ndarray
+        Right singular vectors of size (X.shape[0], r)
+    """
+    Nr, Nc = X.shape
+    dim = r + p
+    R = np.random.randn(Nc, dim)
+    Z = X @ R
+    for _i in range(q):
+        Z = X @ (X.T @ Z)
+    Q, R = np.linalg.qr(Z, mode="reduced")
+    Y = Q.T @ X
+    UY, S, VT = np.linalg.svd(Y, full_matrices=0)
+    U = Q @ UY
+    selected = np.argsort(np.abs(S))[::-1][0:r]
+    return U[:, selected], S[selected], VT[selected, :]
 
 
 # =================
@@ -150,7 +196,7 @@ def _find_blocks_by_sbm(A, K, directed=False):
     # Embed the nodes using the eigen-decomposition of the adjacency matrix.
     svd = TruncatedSVD(n_components=K, algorithm="randomized")
     svd.fit(A)
-    u, s = svd.components_.T, svd.singular_values_
+    u, _ = svd.components_.T, svd.singular_values_
 
     # Normlize to have unit norm for spherical clustering
     u = np.einsum("ij,i->ij", u, 1 / np.maximum(1e-12, np.linalg.norm(u, axis=1)))
@@ -190,6 +236,7 @@ def _truncated_residual_matrix(A, group_ids, group_ids_null, window_length):
 
     # Transition matrix
     P = utils.row_normalize(A)
+    din = np.array(A.sum(axis=0)).reshape(-1)
 
     # Calculating the parameters for dcSBM for the block approximation
     #   Din: Din[k] = the number of edges pointing to nodes in the kth group
@@ -217,14 +264,20 @@ def _truncated_residual_matrix(A, group_ids, group_ids_null, window_length):
 
     # Compute the sum power \sum_{t=1} ^{T-1} Psbm^t
     Psbm_pow = utils.matrix_sum_power(Psbm, window_length - 1)
-    Psbm_null_pow = utils.matrix_sum_power(Psbm_null, window_length)
-
     P_node2g_Psbm_pow = P @ node2g @ Psbm_pow
+    Psbm_null_pow = utils.matrix_sum_power(Psbm_null, window_length)
     node2gnull_Psbm_null_pow = node2gnull @ Psbm_null_pow
     p_rows, p_cols, prc = sparse.find(P)
-    src = utils.safe_log(
-        prc + P_node2g_Psbm_pow[p_rows, group_ids[p_cols]]
-    ) - utils.safe_log(P_node2g_Psbm_pow[p_rows, group_ids[p_cols]])
+    Src = (
+        utils.safe_log(
+            prc * Din[group_ids[p_cols]]
+            + P_node2g_Psbm_pow[p_rows, group_ids[p_cols]] * din[p_cols]
+        )
+        - utils.safe_log(node2gnull_Psbm_null_pow[p_rows, group_ids_null[p_cols]])
+        - utils.safe_log(din[p_cols])
+        - utils.safe_log(P_node2g_Psbm_pow[p_rows, group_ids[p_cols]])
+        + utils.safe_log(node2gnull_Psbm_null_pow[p_rows, group_ids_null[p_cols]])
+    )
 
     # ----------------------------------
     # Calculate matrix L
@@ -253,13 +306,14 @@ def _truncated_residual_matrix(A, group_ids, group_ids_null, window_length):
 
     # Construct L
     L_truncated = h_truncated @ sparse.csr_matrix(node2pair.T)
-
     # ---------------------------------------
     # Calculate truncated residual matrix, R
     # ---------------------------------------
-
     R_truncated = L_truncated.copy()
-    R_truncated[(p_rows, p_cols)] = h[(p_rows, group_pair_ids[p_cols])] + src
+    R_truncated[(p_rows, p_cols)] = np.maximum(
+        0, h[(p_rows, group_pair_ids[p_cols])] + Src
+    )
+    R_truncated.eliminate_zeros()
     return R_truncated
 
 
@@ -274,7 +328,8 @@ def _get_sbm_params(A, group_ids):
     :rtype: Din: nd.array. Psbm: np.ndarray. U: sparse.csr_matrix
     """
     U = utils.to_member_matrix(group_ids)
-    Lambda = utils.row_normalize((U.T @ A @ U).toarray())
+    Lambda = (U.T @ A @ U).toarray()
     Din = np.array(np.sum(Lambda, axis=0)).reshape(-1)
+    # norm_Lambda = utils.row_normalize(Lambda)
     Psbm = np.einsum("ij,i->ij", Lambda, 1 / np.maximum(1, np.sum(Lambda, axis=1)))
     return Din, Psbm, U
