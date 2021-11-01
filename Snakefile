@@ -276,7 +276,6 @@ rule embedding_link_prediction:
         dim=lambda wildcards: wildcards.dim,
         window_length=lambda wildcards: wildcards.window_length,
         directed=lambda wildcards: wildcards.directed,
-        num_walks=10,
     script:
         "workflow/embedding.py"
 
@@ -377,7 +376,6 @@ rule embedding_lfr_net:
         dim=lambda wildcards: wildcards.dim,
         window_length=lambda wildcards: wildcards.window_length,
         directed="undirected",
-        num_walks=10,
     script:
         "workflow/embedding.py"
 

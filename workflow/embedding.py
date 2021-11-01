@@ -29,9 +29,6 @@ controll_for = (
     if "controlfor" in snakemake.params.keys()
     else "None"
 )
-num_walks = (
-    int(snakemake.params["num_walks"]) if "num_walks" in snakemake.params.keys() else 1
-)
 backward_prob = (
     float(snakemake.params["backward_prob"])
     if "backward_prob" in snakemake.params.keys()
@@ -73,25 +70,17 @@ if directed:
 membership = np.zeros(net.shape[0])
 offset = np.zeros(net.shape[0])
 if model_name == "node2vec":
-    model = graph_embeddings.Node2Vec(
-        window_length=window_length, restart_prob=0, num_walks=num_walks
-    )
+    model = graph_embeddings.Node2Vec(window_length=window_length, restart_prob=0)
 elif model_name == "node2vec-qhalf":
     model = graph_embeddings.Node2Vec(
-        window_length=window_length, restart_prob=0, num_walks=num_walks, q=0.5
+        window_length=window_length, restart_prob=0, q=0.5
     )
 elif model_name == "node2vec-qdouble":
-    model = graph_embeddings.Node2Vec(
-        window_length=window_length, restart_prob=0, num_walks=num_walks, q=2
-    )
+    model = graph_embeddings.Node2Vec(window_length=window_length, restart_prob=0, q=2)
 elif model_name == "deepwalk":
-    model = graph_embeddings.DeepWalk(
-        window_length=window_length, restart_prob=0, num_walks=num_walks
-    )
+    model = graph_embeddings.DeepWalk(window_length=window_length, restart_prob=0,)
 elif model_name == "glove":
-    model = graph_embeddings.Glove(
-        window_length=window_length, restart_prob=0, num_walks=num_walks
-    )
+    model = graph_embeddings.Glove(window_length=window_length, restart_prob=0,)
 elif model_name == "fairwalk":
     if (controll_for == "None") or (node_table is None):
         model = graph_embeddings.Fairwalk(window_length=window_length)

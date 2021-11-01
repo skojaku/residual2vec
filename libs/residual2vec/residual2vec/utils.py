@@ -55,9 +55,11 @@ def to_member_matrix(group_ids, node_ids=None, shape=None):
         Nr = int(np.max(node_ids) + 1)
         Nc = int(np.max(group_ids) + 1)
         shape = (Nr, Nc)
-    return sparse.csr_matrix(
+    U = sparse.csr_matrix(
         (np.ones_like(group_ids), (node_ids, group_ids)), shape=shape,
     )
+    U.data = U.data * 0 + 1
+    return U
 
 
 def matrix_sum_power(A, T):
