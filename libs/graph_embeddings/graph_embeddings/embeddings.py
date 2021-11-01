@@ -66,7 +66,7 @@ class Node2Vec(NodeEmbeddings):
 
     Parameters
     ----------
-    num_walks : int (optional, default 10)
+    num_walks : int (optional, default 5)
         Number of walks per node
     walk_length : int (optional, default 40)
         Length of walks
@@ -79,7 +79,7 @@ class Node2Vec(NodeEmbeddings):
 
     def __init__(
         self,
-        num_walks=10,
+        num_walks=5,
         walk_length=40,
         window_length=10,
         restart_prob=0,
@@ -164,7 +164,7 @@ class DeepWalk(Node2Vec):
 class Glove:
     def __init__(
         self,
-        num_walks=10,
+        num_walks=5,
         walk_length=40,
         window_length=10,
         restart_prob=0,
