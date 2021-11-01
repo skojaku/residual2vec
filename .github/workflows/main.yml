@@ -30,8 +30,8 @@ jobs:
             python setup.py bdist_wheel
       - name: Deploy to PyPI
         if: success() && startsWith(github.ref, 'refs/tags') && matrix.python-version == 3.8
-        working-directory: libs/residual2vec
         uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
+        working-directory: libs/residual2vec
