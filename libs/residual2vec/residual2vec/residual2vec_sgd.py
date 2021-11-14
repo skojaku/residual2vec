@@ -80,7 +80,7 @@ class residual2vec_sgd:
         self,
         noise_sampler,
         window_length=10,
-        batch_size=128,
+        batch_size=256,
         num_walks=5,
         walk_length=40,
         p=1,
