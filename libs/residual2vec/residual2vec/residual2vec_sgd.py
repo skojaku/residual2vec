@@ -127,6 +127,7 @@ class residual2vec_sgd:
         self.adjmat = adjmat
         self.n_nodes = adjmat.shape[0]
         self.sampler.fit(adjmat)
+        return self
 
     def transform(self, dim):
         """Generate embedding vectors.
