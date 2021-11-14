@@ -1,5 +1,6 @@
 """Supplementary functions for residual2vec.py."""
 import numpy as np
+from numba import njit
 from scipy import sparse
 
 
@@ -108,3 +109,35 @@ def safe_log(A, minval=1e-12):
         return A
     else:
         return np.log(np.maximum(A, minval))
+
+
+@njit(nogil=True)
+def _csr_row_cumsum(indptr, data):
+    out = np.empty_like(data)
+    for i in range(len(indptr) - 1):
+        acc = 0
+        for j in range(indptr[i], indptr[i + 1]):
+            acc += data[j]
+            out[j] = acc
+        out[j] = 1.0
+    return out
+
+
+def csr_sampling(rows, csr_mat):
+    return _csr_sampling(rows, csr_mat.indptr, csr_mat.indices, csr_mat.data)
+
+
+@njit(nogil=True)
+def _neighbors(indptr, indices_or_data, t):
+    return indices_or_data[indptr[t] : indptr[t + 1]]
+
+
+@njit(nogil=True)
+def _csr_sampling(rows, indptr, indices, data):
+    n = len(rows)
+    retval = np.empty(n, dtype=indices.dtype)
+    for j in range(n):
+        neighbors = _neighbors(indptr, indices, rows[j])
+        neighbors_p = _neighbors(indptr, data, rows[j])
+        retval[j] = neighbors[np.searchsorted(neighbors_p, np.random.rand())]
+    return retval
