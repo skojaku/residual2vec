@@ -79,7 +79,7 @@ class residual2vec_sgd:
         noise_sampler,
         window_length=10,
         batch_size=4,
-        num_walks=100,
+        num_walks=10,
         walk_length=80,
         p=1,
         q=1,
@@ -230,7 +230,7 @@ class TripletDataset(Dataset):
         self._generate_samples()
 
     def __len__(self):
-        return self.num_walks * self.walk_length
+        return self.n_nodes * self.num_walks * self.walk_length
 
     def __getitem__(self, idx):
         if self.t_walk == len(self.walk):
