@@ -7,7 +7,7 @@ Usage:
 import residual2vec as rv
 
 # Node sampler for the noise distribution for negative sampling
-noise_sampler = rv.ConfigSampler()
+noise_sampler = rv.ConfigModelNodeSampler()
 
 model = rv.residual2vec_sgd(noise_sampler = noise_sampler, window_length = 10)
 model.fit(G)
