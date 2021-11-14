@@ -91,10 +91,10 @@ elif model_name == "fairwalk":
         )
 elif model_name == "residual2vec":
     if (controll_for == "None") or (node_table is None):
-        model = residual2vec.residual2vec(window_length=window_length,)
+        model = residual2vec.residual2vec_matrix_factorization(window_length=window_length,)
     else:
         membership = node_table[controll_for].values
-        model = residual2vec.residual2vec(
+        model = residual2vec.residual2vec_matrix_factorization(
             group_membership=membership, window_length=window_length,
         )
 elif model_name == "leigenmap":
