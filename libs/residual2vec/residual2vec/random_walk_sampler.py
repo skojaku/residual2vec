@@ -1,4 +1,6 @@
 """Graph module to store a network and generate random walks from it."""
+from collections.abc import Iterable
+
 import numpy as np
 from numba import njit
 
@@ -32,14 +34,13 @@ class RandomWalkSampler:
         self.walk_length = walk_length
         self.p = p
         self.q = q
-
         self.weighted = (~np.isclose(np.min(adjmat.data), 1)) or (
             ~np.isclose(np.max(adjmat.data), 1)
         )
 
         adjmat.sort_indices()
-        self.indptr = adjmat.indptr
-        self.indices = adjmat.indices
+        self.indptr = adjmat.indptr.astype(np.int64)
+        self.indices = adjmat.indices.astype(np.int64)
         if self.weighted:
             data = adjmat.data / adjmat.sum(axis=1).A1.repeat(np.diff(self.indptr))
             self.data = utils._csr_row_cumsum(self.indptr, data)
@@ -60,13 +61,25 @@ class RandomWalkSampler:
                 self.walk_length,
                 self.p,
                 self.q,
-                start,
+                start
+                if isinstance(start, Iterable)
+                else np.array([start]).astype(np.int64),
             )
         else:
             walk = _random_walk(
-                self.indptr, self.indices, self.walk_length, self.p, self.q, start
+                self.indptr,
+                self.indices,
+                self.walk_length,
+                self.p,
+                self.q,
+                start
+                if isinstance(start, Iterable)
+                else np.array([start]).astype(np.int64),
             )
-        return walk.astype(np.int64)
+        if isinstance(start, Iterable):
+            return walk.astype(np.int64)
+        else:
+            return walk[0].astype(np.int64)
 
 
 @njit(nogil=True)
@@ -80,65 +93,75 @@ def _isin_sorted(a, x):
 
 
 @njit(nogil=True)
-def _random_walk(indptr, indices, walk_length, p, q, t):
+def _random_walk(indptr, indices, walk_length, p, q, ts):
     max_prob = max(1 / p, 1, 1 / q)
     prob_0 = 1 / p / max_prob
     prob_1 = 1 / max_prob
     prob_2 = 1 / q / max_prob
 
-    walk = np.empty(walk_length, dtype=indices.dtype)
-    walk[0] = t
-    walk[1] = np.random.choice(_neighbors(indptr, indices, t))
-    for j in range(2, walk_length):
-        neighbors = _neighbors(indptr, indices, walk[j - 1])
-        if p == q == 1:
-            # faster version
-            walk[j] = np.random.choice(neighbors)
-            continue
-        while True:
-            new_node = np.random.choice(neighbors)
-            r = np.random.rand()
-            if new_node == walk[j - 2]:
-                if r < prob_0:
+    walk = np.empty((len(ts), walk_length), dtype=indices.dtype)
+
+    for walk_id, t in enumerate(ts):
+        walk[walk_id, 0] = t
+        walk[walk_id, 1] = np.random.choice(_neighbors(indptr, indices, t))
+        for j in range(2, walk_length):
+            neighbors = _neighbors(indptr, indices, walk[walk_id, j - 1])
+            if p == q == 1:
+                # faster version
+                walk[walk_id, j] = np.random.choice(neighbors)
+                continue
+            while True:
+                new_node = np.random.choice(neighbors)
+                r = np.random.rand()
+                if new_node == walk[walk_id, j - 2]:
+                    if r < prob_0:
+                        break
+                elif _isin_sorted(
+                    _neighbors(indptr, indices, walk[walk_id, j - 2]), new_node
+                ):
+                    if r < prob_1:
+                        break
+                elif r < prob_2:
                     break
-            elif _isin_sorted(_neighbors(indptr, indices, walk[j - 2]), new_node):
-                if r < prob_1:
-                    break
-            elif r < prob_2:
-                break
-        walk[j] = new_node
+            walk[walk_id, j] = new_node
     return walk
 
 
 @njit(nogil=True)
-def _random_walk_weighted(indptr, indices, data, walk_length, p, q, t):
+def _random_walk_weighted(indptr, indices, data, walk_length, p, q, ts):
     max_prob = max(1 / p, 1, 1 / q)
     prob_0 = 1 / p / max_prob
     prob_1 = 1 / max_prob
     prob_2 = 1 / q / max_prob
 
-    walk = np.empty(walk_length, dtype=indices.dtype)
-    walk[0] = t
-    walk[1] = _neighbors(indptr, indices, t)[
-        np.searchsorted(_neighbors(indptr, data, t), np.random.rand())
-    ]
-    for j in range(2, walk_length):
-        neighbors = _neighbors(indptr, indices, walk[j - 1])
-        neighbors_p = _neighbors(indptr, data, walk[j - 1])
-        if p == q == 1:
-            # faster version
-            walk[j] = neighbors[np.searchsorted(neighbors_p, np.random.rand())]
-            continue
-        while True:
-            new_node = neighbors[np.searchsorted(neighbors_p, np.random.rand())]
-            r = np.random.rand()
-            if new_node == walk[j - 2]:
-                if r < prob_0:
+    walk = np.empty((len(ts), walk_length), dtype=indices.dtype)
+
+    for walk_id, t in enumerate(ts):
+        walk[walk_id, 0] = t
+        walk[walk_id, 1] = _neighbors(indptr, indices, t)[
+            np.searchsorted(_neighbors(indptr, data, t), np.random.rand())
+        ]
+        for j in range(2, walk_length):
+            neighbors = _neighbors(indptr, indices, walk[walk_id, j - 1])
+            neighbors_p = _neighbors(indptr, data, walk[walk_id, j - 1])
+            if p == q == 1:
+                # faster version
+                walk[walk_id, j] = neighbors[
+                    np.searchsorted(neighbors_p, np.random.rand())
+                ]
+                continue
+            while True:
+                new_node = neighbors[np.searchsorted(neighbors_p, np.random.rand())]
+                r = np.random.rand()
+                if new_node == walk[walk_id, j - 2]:
+                    if r < prob_0:
+                        break
+                elif _isin_sorted(
+                    _neighbors(indptr, indices, walk[walk_id, j - 2]), new_node
+                ):
+                    if r < prob_1:
+                        break
+                elif r < prob_2:
                     break
-            elif _isin_sorted(_neighbors(indptr, indices, walk[j - 2]), new_node):
-                if r < prob_1:
-                    break
-            elif r < prob_2:
-                break
-        walk[j] = new_node
+            walk[walk_id, j] = new_node
     return walk

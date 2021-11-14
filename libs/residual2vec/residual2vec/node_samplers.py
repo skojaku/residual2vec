@@ -95,13 +95,13 @@ class SBMNodeSampler(NodeSampler):
             self.block2node.indptr, self.block2node.data
         )
 
-    def sampling(self, center_node, n_samples):
-        _center_nodes = np.ones(n_samples, dtype=np.int64) * int(center_node)
+    def sampling(self, center_nodes, n_samples):
+        _center_nodes = np.repeat(center_nodes, n_samples)
         block_ids = utils.csr_sampling(
             self.group_membership[_center_nodes], self.block2block
         )
         context = utils.csr_sampling(block_ids, self.block2node)
-        return context.astype(np.int64)
+        return context.astype(np.int64).reshape((-1, n_samples))
 
 
 class ConfigModelNodeSampler(SBMNodeSampler):
