@@ -5,7 +5,7 @@ This repository contains the code for
 
 - S. Kojaku, J. Yoon, I. Constantino, and Y.-Y. Ahn, Residual2Vec: Debiasing graph embedding using random graphs. NerurIPS (2021). [link will be added when available]
 
-- Preprint (arXiv): https://arxiv.org/abs/2110.07654
+- [Preprint (arXiv)](https://arxiv.org/abs/2110.07654)
 
 - BibTex entry:
 ```latex

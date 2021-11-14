@@ -6,7 +6,7 @@ residual2vec is an algorithm to embed networks to a vector space while controlli
 
 - S. Kojaku, J. Yoon, I. Constantino, and Y.-Y. Ahn, Residual2Vec: Debiasing graph embedding using random graphs. NerurIPS (2021). [link will be added when available]
 
-- Preprint (arXiv): [link to arXiv]
+- [Preprint (arXiv)](https://arxiv.org/abs/2110.07654)
 
 - BibTex entry:
 ```latex
@@ -53,7 +53,7 @@ The residual2vec with a matrix factorization is used in the original paper and r
 ```python
 import residual2vec as rv
 
-model = rv.residual2vec(window_length = 10, group_membership = None)
+model = rv.residual2vec_matrix_factorization(window_length = 10, group_membership = None)
 model.fit(G)
 emb = model.transform(dim = 64)
 # or equivalently emb = model.fit(G).transform(dim = 64)
