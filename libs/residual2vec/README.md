@@ -34,14 +34,21 @@ This code is tested in Python 3.7 and 3.8, and has dependencies with
 the following packages:
 
 ```
-- numpy==1.20.3
+- numpy==1.19.0
 - scipy==1.7.1
 - scikit-learn==1.0
 - faiss-cpu==1.7.0
+- numba==0.50.0
+- torch==1.10.0
+- tqdm==4.48.2
 ```
 
 
 ## Example
+
+residual2vec has two versions, one optimized with a matrix factorization, and the other optimized with a stochatic gradient descent aglorithm. 
+
+The residual2vec with a matrix factorization is used in the original paper and runs faster than the other version for networks of upto 100k nodes.  
 
 ```python
 import residual2vec as rv
@@ -56,3 +63,40 @@ emb = model.transform(dim = 64)
 - `group_membership`: an array of node labels. Used to debias the structural bias correlated with the node labels.
 - `dim`: Dimension of the embedding
 - `emb`: 2D numpy array of shape (`N`, `dim`), where `N` is the number of nodes. The `i`th row in the array (i.e., `emb[i, :]`) represents the embedding vector of the `i`th node in the given adjacency matrix `G`.
+
+
+A limitation of the matrix-factorization-based implementation is that it is memory demanding, especially for dense or large networks. 
+The other version is implemented to circumvent this problem by using the stochastic block model.  
+
+```python
+import residual2vec as rv
+
+noise_sampler = rv.ConfigModelNodeSampler() # sampler for the negative sampling
+
+model = rv.residual2vec_sgd(noise_sampler, window_length = 10)
+model.fit(G)
+emb = model.transform(dim = 64)
+# or equivalently emb = model.fit(G).transform(dim = 64)
+```
+
+The `residual2vec_sgd` has an additional argument `noise_sampler`, which is a class that samples context nodes for a given center node. 
+Several samplers are implemented in this package:
+- `ErdosRenyiNodeSampler`: Sampler based on the Erdos Renyi random graph (i.e., sample context node with the same probability)  
+- `ConfigModelNodeSampler`: Sampler based on the configuration model (i.e., sample context node with probability proportional to its degree)  
+- `SBMNodeSampler`: Sampler based on the stochastic block model (i.e., sample context node using the stochastic block model) 
+
+The `SBMNodeSampler` is useful to negate the bias due to a group structure in networks (i.e., structure correlated with a discrete label of nodes):
+
+```python
+import residual2vec as rv
+
+group_membership = [0,0,0,0,1,1,1,1]
+noise_sampler = rv.SBMNodeSampler(window_length = 10, group_membership=group_membership) # sampler for the negative sampling
+
+model = rv.residual2vec_sgd(noise_sampler, window_length = 10)
+model.fit(G)
+emb = model.transform(dim = 64)
+# or equivalently emb = model.fit(G).transform(dim = 64)
+```
+
+See the original paper for details.
