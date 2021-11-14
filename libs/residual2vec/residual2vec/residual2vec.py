@@ -5,7 +5,7 @@ Usage:
 ```python
 import residual2vec as rv
 
-model = rv.residual2vec(window_length = 10, group_membership = None)
+model = rv.residual2vec_matrix_factorization(window_length = 10, group_membership = None)
 model.fit(G)
 emb = model.transform(dim = 64)
 # or equivalently emb = model.fit(G).transform(dim = 64)
@@ -16,7 +16,7 @@ If want to remove the structural bias associated with node labels (i.e., gender)
 import residual2vec as rv
 
 group_membership = [0,0,0,0,1,1,1,1] # an array of group memberships of nodes.
-model = rv.residual2vec(window_length = 10, group_membership = group_membership)
+model = rv.residual2vec_matrix_factorization(window_length = 10, group_membership = group_membership)
 model.fit(G)
 emb = model.transform(dim = 64)
 ```
@@ -30,11 +30,13 @@ from sklearn.decomposition import TruncatedSVD
 from residual2vec import utils
 
 
-class residual2vec:
+class residual2vec_matrix_factorization:
+    """Residual2Vec based on the matrix factorization."""
+
     def __init__(
         self, window_length=10, group_membership=None, num_blocks=1000,
     ):
-        """Residual2Vec.
+        """Residual2Vec based on the matrix factorization.
 
         :param window_length: window length, defaults to 10
         :type window_length: int, optional
@@ -44,15 +46,6 @@ class residual2vec:
         :type group_membership: [type], optional
         :param num_blocks: Number of blocks for block approximation, defaults to 1000
         :type num_blocks: int, optional.
-
-        .. highlight:: python
-        .. code-block:: python
-            >>> import residual_node2vec as r2v
-            >>> net = nx.karate_club_graph()
-            >>> model = r2v.Residual2Vec(null_model="configuration", window_length=5, restart_prob=0, residual_type="individual")
-            >>> model.fit(net)
-            >>> in_vec = model.transform(net, dim = 30)
-            >>> out_vec = model.transform(net, dim = 30, return_out_vector=True)
         """
 
         if group_membership is None:
@@ -116,17 +109,6 @@ class residual2vec:
         self.in_vec = in_vec[:, order] @ np.diag(np.power(val, self.alpha))
         self.out_vec = out_vec[order, :].T @ np.diag(np.power(val, 1 - self.alpha))
         return self.in_vec
-
-
-#        svd = TruncatedSVD(n_components=dim, algorithm="randomized")
-#        svd.fit(self.truncated_R.T)
-#        U, lam = svd.components_, svd.singular_values_
-#        U = U.T @ np.diag(np.power(lam, self.alpha))
-#
-#        order = np.argsort(lam)[::-1]
-#        self.U = U[:, order]
-#
-#        return U
 
 
 def rSVD(X, r, p=10, q=1):

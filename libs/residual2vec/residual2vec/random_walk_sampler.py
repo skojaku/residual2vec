@@ -6,23 +6,52 @@ from residual2vec import utils
 
 
 class RandomWalkSampler:
-    def __init__(self, A, walk_length=40, p=1, q=1):
+    """Module for generating a sentence using random walks.
+
+    .. highlight:: python
+    .. code-block:: python
+        >>> from residual2vec.random_walk_sampler import RandomWalkSampler
+        >>> net = nx.adjacency_matrix(nx.karate_club_graph())
+        >>> sampler = RandomWalkSampler(net)
+        >>> walk = sampler.sampling(start=12)
+        >>> print(walk) # [12, 11, 10, 9, ...]
+    """
+
+    def __init__(self, adjmat, walk_length=40, p=1, q=1):
+        """Random Walk Sampler.
+
+        :param adjmat: Adjacency matrix of the graph.
+        :type adjmat: scipy sparse matrix format (csr).
+        :param walk_length: length per walk, defaults to 40
+        :type walk_length: int, optional
+        :param p: node2vec parameter p (1/p is the weights of the edge to previously visited node), defaults to 1
+        :type p: float, optional
+        :param q: node2vec parameter q (1/q) is the weights of the edges to nodes that are not directly connected to the previously visted node, defaults to 1
+        :type q: float, optional
+        """
         self.walk_length = walk_length
         self.p = p
         self.q = q
 
-        self.weighted = (~np.isclose(np.min(A.data), 1)) or (
-            ~np.isclose(np.max(A.data), 1)
+        self.weighted = (~np.isclose(np.min(adjmat.data), 1)) or (
+            ~np.isclose(np.max(adjmat.data), 1)
         )
 
-        A.sort_indices()
-        self.indptr = A.indptr
-        self.indices = A.indices
+        adjmat.sort_indices()
+        self.indptr = adjmat.indptr
+        self.indices = adjmat.indices
         if self.weighted:
-            data = A.data / A.sum(axis=1).A1.repeat(np.diff(self.indptr))
+            data = adjmat.data / adjmat.sum(axis=1).A1.repeat(np.diff(self.indptr))
             self.data = utils._csr_row_cumsum(self.indptr, data)
 
     def sampling(self, start):
+        """Sample a random walk path.
+
+        :param start: ID of the starting node
+        :type start: int
+        :return: array of visiting nodes
+        :rtype: np.ndarray
+        """
         if self.weighted:
             walk = _random_walk_weighted(
                 self.indptr,

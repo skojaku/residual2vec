@@ -1,6 +1,5 @@
 """Graph module to store a network and generate random walks from it."""
 import numpy as np
-from numba import njit
 from scipy import sparse
 
 from residual2vec import utils
@@ -8,16 +7,41 @@ from residual2vec import utils
 
 class NodeSampler:
     def fit(self, A):
+        """Fit the sampler.
+
+        :param A: adjacency matrix
+        :type A: scipy.csr_matrix
+        :raises NotImplementedError: [description]
+        """
         raise NotImplementedError
 
-    def sampling(self, center_nodes, n_samples):
+    def sampling(self, center_node, n_samples):
+        """Sample context nodes from the graph for center nodes.
+
+        :param center_node: ID of center node
+        :type center_node: int
+        :param n_samples: number of samples per center node
+        :type n_samples: int
+        :raises NotImplementedError: [description]
+        """
         raise NotImplementedError
 
 
 class SBMNodeSampler(NodeSampler):
+    """Node Sampler based on the stochatic block model."""
+
     def __init__(
         self, window_length=10, group_membership=None, dcsbm=True,
     ):
+        """Node Sampler based on the stochatic block model.
+
+        :param window_length: length of the context window, defaults to 10
+        :type window_length: int, optional
+        :param group_membership: group membership of nodes, defaults to None
+        :type group_membership: np.ndarray, optional
+        :param dcsbm: Set dcsbm=True to take into account the degree of nodes, defaults to True
+        :type dcsbm: bool, optional
+        """
         if group_membership is None:
             self.group_membership = None
         else:
