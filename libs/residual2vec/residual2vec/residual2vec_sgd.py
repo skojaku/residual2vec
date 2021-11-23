@@ -52,6 +52,7 @@ class CustomNodeSampler(rv.NodeSampler):
 import random
 
 import numpy as np
+import torch
 from numba import njit
 from scipy import sparse
 from torch.optim import Adam
@@ -87,6 +88,7 @@ class residual2vec_sgd:
         q=1,
         cuda=False,
         buffer_size=100000,
+        miniters=200,
     ):
         """Residual2Vec based on the stochastic gradient descent.
 
@@ -106,6 +108,8 @@ class residual2vec_sgd:
         :type q: float, optional
         :param buffer_size: Buffer size for sampled center and context pairs, defaults to 10000
         :type buffer_size: int, optional
+        :param miniter: Minimum number of iterations, defaults to 200
+        :type miniter: int, optional
         """
         self.window_length = window_length
         self.sampler = noise_sampler
@@ -116,6 +120,7 @@ class residual2vec_sgd:
         self.q = q
         self.batch_size = batch_size
         self.buffer_size = buffer_size
+        self.miniters = miniters
 
     def fit(self, adjmat):
         """Learn the graph structure to generate the node embeddings.
@@ -155,9 +160,18 @@ class residual2vec_sgd:
             model = model.cuda()
 
         # Set up the Training dataset
+        adjusted_num_walks = np.ceil(
+            self.num_walks
+            * np.maximum(
+                1,
+                self.batch_size
+                * self.miniters
+                / (self.n_nodes * self.num_walks * self.walk_length),
+            )
+        ).astype(int)
         dataset = TripletDataset(
             adjmat=self.adjmat,
-            num_walks=self.num_walks,
+            num_walks=adjusted_num_walks,
             window_length=self.window_length,
             noise_sampler=self.sampler,
             padding_id=PADDING_IDX,
@@ -166,15 +180,26 @@ class residual2vec_sgd:
             q=self.q,
             buffer_size=self.buffer_size,
         )
-        dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=1,
+            pin_memory=True,
+        )
 
         # Training
-        optim = Adam(model.parameters(), lr=0.005)
-        pbar = tqdm(dataloader)
+        optim = Adam(model.parameters(), lr=0.003)
+        # scaler = torch.cuda.amp.GradScaler()
+        pbar = tqdm(dataloader, miniters=100)
         for iword, owords, nwords in pbar:
+            # optim.zero_grad()
+            for param in model.parameters():
+                param.grad = None
+            # with torch.cuda.amp.autocast():
             loss = neg_sampling(iword, owords, nwords)
-            optim.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
             optim.step()
             pbar.set_postfix(loss=loss.item())
 
