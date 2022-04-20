@@ -312,7 +312,10 @@ class TripletDataset(Dataset):
             padding_id=self.padding_id,
         )
         self.random_contexts = self.noise_sampler.sampling(
-            self.centers, self.contexts.shape[1]
+            center_nodes=self.centers,
+            context_nodes=self.contexts,
+            n_samples=self.contexts.shape[1],
+            padding_id=self.padding_id,
         )
         self.n_sampled = len(self.centers)
         self.scanned_node_id = next_scanned_node_id % self.n_nodes
