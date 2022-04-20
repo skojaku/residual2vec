@@ -85,6 +85,7 @@ Several samplers are implemented in this package:
 - `ErdosRenyiNodeSampler`: Sampler based on the Erdos Renyi random graph (i.e., sample context node with the same probability)
 - `ConfigModelNodeSampler`: Sampler based on the configuration model (i.e., sample context node with probability proportional to its degree)
 - `SBMNodeSampler`: Sampler based on the stochastic block model (i.e., sample context node using the stochastic block model)
+- `ConditionalContextSampler`: Sampling a random context node conditioned on the group to which a given context node blongs. The group membership needs to be given when creating this instance (experimental).
 
 The `SBMNodeSampler` is useful to negate the bias due to a group structure in networks (i.e., structure correlated with a discrete label of nodes):
 

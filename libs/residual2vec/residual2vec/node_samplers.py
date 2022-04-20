@@ -122,7 +122,7 @@ class ConditionalContextSampler(NodeSampler):
     """Node Sampler conditioned on group membership."""
 
     def __init__(
-        self, group_membership=None,
+        self, group_membership,
     ):
         """Node Sampler conditioned on group membership.
 
