@@ -5,7 +5,7 @@ from os import path
 
 from setuptools import find_packages, setup
 
-__version__ = "0.0.7"
+__version__ = "0.0.8"
 
 
 def load_requires_from_file(fname):
