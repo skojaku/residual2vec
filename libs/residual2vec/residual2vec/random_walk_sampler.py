@@ -19,7 +19,7 @@ class RandomWalkSampler:
         >>> print(walk) # [12, 11, 10, 9, ...]
     """
 
-    def __init__(self, adjmat, walk_length=40, p=1, q=1):
+    def __init__(self, adjmat, walk_length=40, p=1, q=1, padding_id=-1):
         """Random Walk Sampler.
 
         :param adjmat: Adjacency matrix of the graph.
@@ -34,6 +34,7 @@ class RandomWalkSampler:
         self.walk_length = walk_length
         self.p = p
         self.q = q
+        self.padding_id = padding_id
         self.weighted = (~np.isclose(np.min(adjmat.data), 1)) or (
             ~np.isclose(np.max(adjmat.data), 1)
         )
@@ -61,6 +62,7 @@ class RandomWalkSampler:
                 self.walk_length,
                 self.p,
                 self.q,
+                self.padding_id,
                 start
                 if isinstance(start, Iterable)
                 else np.array([start]).astype(np.int64),
@@ -72,6 +74,7 @@ class RandomWalkSampler:
                 self.walk_length,
                 self.p,
                 self.q,
+                self.padding_id,
                 start
                 if isinstance(start, Iterable)
                 else np.array([start]).astype(np.int64),
@@ -93,19 +96,24 @@ def _isin_sorted(a, x):
 
 
 @njit(nogil=True)
-def _random_walk(indptr, indices, walk_length, p, q, ts):
+def _random_walk(indptr, indices, walk_length, p, q, padding_id, ts):
     max_prob = max(1 / p, 1, 1 / q)
     prob_0 = 1 / p / max_prob
     prob_1 = 1 / max_prob
     prob_2 = 1 / q / max_prob
 
-    walk = np.empty((len(ts), walk_length), dtype=indices.dtype)
-
+    walk = padding_id * np.ones((len(ts), walk_length), dtype=indices.dtype)
     for walk_id, t in enumerate(ts):
         walk[walk_id, 0] = t
-        walk[walk_id, 1] = np.random.choice(_neighbors(indptr, indices, t))
+        neighbors = _neighbors(indptr, indices, t)
+        if len(neighbors) == 0:
+            continue
+        walk[walk_id, 1] = np.random.choice(neighbors)
         for j in range(2, walk_length):
             neighbors = _neighbors(indptr, indices, walk[walk_id, j - 1])
+            if len(neighbors) == 0:
+                break
+
             if p == q == 1:
                 # faster version
                 walk[walk_id, j] = np.random.choice(neighbors)
@@ -128,21 +136,29 @@ def _random_walk(indptr, indices, walk_length, p, q, ts):
 
 
 @njit(nogil=True)
-def _random_walk_weighted(indptr, indices, data, walk_length, p, q, ts):
+def _random_walk_weighted(indptr, indices, data, walk_length, p, q, padding_id, ts):
     max_prob = max(1 / p, 1, 1 / q)
     prob_0 = 1 / p / max_prob
     prob_1 = 1 / max_prob
     prob_2 = 1 / q / max_prob
 
-    walk = np.empty((len(ts), walk_length), dtype=indices.dtype)
+    walk = padding_id * np.ones((len(ts), walk_length), dtype=indices.dtype)
 
     for walk_id, t in enumerate(ts):
         walk[walk_id, 0] = t
-        walk[walk_id, 1] = _neighbors(indptr, indices, t)[
+
+        neighbors = _neighbors(indptr, indices, t)
+        if len(neighbors) == 0:
+            continue
+
+        walk[walk_id, 1] = neighbors[
             np.searchsorted(_neighbors(indptr, data, t), np.random.rand())
         ]
         for j in range(2, walk_length):
             neighbors = _neighbors(indptr, indices, walk[walk_id, j - 1])
+            neighbors = _neighbors(indptr, indices, t)
+            if len(neighbors) == 0:
+                break
             neighbors_p = _neighbors(indptr, data, walk[walk_id, j - 1])
             if p == q == 1:
                 # faster version

@@ -21,12 +21,18 @@ N = int(np.max(edge_table.max().values + 1))
 A = sparse.csr_matrix(
     (np.ones(edge_table.shape[0]), (edge_table["src"], edge_table["trg"])), shape=(N, N)
 )
+A = sparse.csr_matrix(sparse.triu(A))
+
 
 #
 #
 # Embed
 #
-model = rv.residual2vec(window_length=50)
+model = rv.residual2vec_sgd(
+    window_length=50,
+    noise_sampler=rv.ConfigModelNodeSampler(),
+    context_window_type="right",
+)
 emb = model.fit(A).transform(dim=5)
 
 xy = PCA(n_components=2).fit_transform(emb)

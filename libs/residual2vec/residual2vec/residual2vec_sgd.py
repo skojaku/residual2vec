@@ -261,7 +261,9 @@ class TripletDataset(Dataset):
         self.context_window_type = {"double": 0, "left": -1, "right": 1}[
             context_window_type
         ]
-        self.rw_sampler = RandomWalkSampler(adjmat, walk_length=walk_length, p=p, q=q)
+        self.rw_sampler = RandomWalkSampler(
+            adjmat, walk_length=walk_length, p=p, q=q, padding_id=padding_id
+        )
         self.node_order = np.random.choice(
             adjmat.shape[0], adjmat.shape[0], replace=False
         )
@@ -289,8 +291,8 @@ class TripletDataset(Dataset):
             self._generate_samples()
 
         center = self.centers[self.sample_id]
-        cont = self.contexts[self.sample_id, :].astype(np.int64)
-        rand_cont = self.random_contexts[self.sample_id, :].astype(np.int64)
+        cont = self.contexts[self.sample_id].astype(np.int64)
+        rand_cont = self.random_contexts[self.sample_id].astype(np.int64)
 
         self.sample_id += 1
 
@@ -314,7 +316,6 @@ class TripletDataset(Dataset):
         self.random_contexts = self.noise_sampler.sampling(
             center_nodes=self.centers,
             context_nodes=self.contexts,
-            n_samples=self.contexts.shape[1],
             padding_id=self.padding_id,
         )
         self.n_sampled = len(self.centers)
@@ -332,26 +333,33 @@ def _get_center_context(
     that extends either left or right of a center word, respectively.
     """
     if context_window_type == 0:
-        return _get_center_double_context_windows(
+        center, context = _get_center_double_context_windows(
             walks, n_walks, walk_len, window_length, padding_id
         )
     elif context_window_type == -1:
-        return _get_center_single_context_window(
+        center, context = _get_center_single_context_window(
             walks, n_walks, walk_len, window_length, padding_id, is_left_window=True
         )
     elif context_window_type == 1:
-        return _get_center_single_context_window(
+        center, context = _get_center_single_context_window(
             walks, n_walks, walk_len, window_length, padding_id, is_left_window=False
         )
     else:
         raise ValueError("Unknown window type")
+    center = np.outer(center, np.ones(context.shape[1]))
+    center, context = center.reshape(-1), context.reshape(-1)
+    s = (center != padding_id) * (context != padding_id)
+    center, context = center[s], context[s]
+    order = np.arange(len(center))
+    random.shuffle(order)
+    return center[order].astype(int), context[order].astype(int)
 
 
 @njit(nogil=True)
 def _get_center_double_context_windows(
     walks, n_walks, walk_len, window_length, padding_id
 ):
-    centers = np.zeros(n_walks * walk_len, dtype=np.int64)
+    centers = padding_id * np.ones(n_walks * walk_len, dtype=np.int64)
     contexts = padding_id * np.ones(
         (n_walks * walk_len, 2 * window_length), dtype=np.int64
     )
@@ -369,16 +377,14 @@ def _get_center_double_context_windows(
                 break
             contexts[start:end, window_length + i] = walks[:, t_walk + 1 + i]
 
-    order = np.arange(walk_len * n_walks)
-    random.shuffle(order)
-    return centers[order], contexts[order, :]
+    return centers, contexts
 
 
 @njit(nogil=True)
 def _get_center_single_context_window(
     walks, n_walks, walk_len, window_length, padding_id, is_left_window=True
 ):
-    centers = np.zeros(n_walks * walk_len, dtype=np.int64)
+    centers = padding_id * np.ones(n_walks * walk_len, dtype=np.int64)
     contexts = padding_id * np.ones((n_walks * walk_len, window_length), dtype=np.int64)
     for t_walk in range(walk_len):
         start, end = n_walks * t_walk, n_walks * (t_walk + 1)
@@ -394,7 +400,4 @@ def _get_center_single_context_window(
                 if t_walk + 1 + i >= walk_len:
                     break
                 contexts[start:end, i] = walks[:, t_walk + 1 + i]
-
-    order = np.arange(walk_len * n_walks)
-    random.shuffle(order)
-    return centers[order], contexts[order, :]
+    return centers, contexts

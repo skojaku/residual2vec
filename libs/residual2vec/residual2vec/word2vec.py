@@ -65,9 +65,9 @@ class NegativeSampling(nn.Module):
         self.logsigmoid = nn.LogSigmoid()
 
     def forward(self, iword, owords, nwords):
-        ivectors = self.embedding.forward_i(iword).unsqueeze(2)
+        ivectors = self.embedding.forward_i(iword)
         ovectors = self.embedding.forward_o(owords)
-        nvectors = self.embedding.forward_o(nwords).neg()
-        oloss = self.logsigmoid(torch.bmm(ovectors, ivectors).squeeze()).mean(1)
-        nloss = self.logsigmoid(torch.bmm(nvectors, ivectors).squeeze()).mean(1)
+        nvectors = self.embedding.forward_o(nwords)
+        oloss = self.logsigmoid((ovectors * ivectors).sum(dim=1))
+        nloss = self.logsigmoid((nvectors * ivectors).sum(dim=1).neg())
         return -(oloss + nloss).mean()

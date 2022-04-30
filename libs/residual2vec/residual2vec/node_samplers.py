@@ -15,7 +15,7 @@ class NodeSampler:
         """
         raise NotImplementedError
 
-    def sampling(self, center_nodes, context_nodes, n_samples, padding_id):
+    def sampling(self, center_nodes, context_nodes, padding_id):
         """Sample context nodes from the graph for center nodes.
 
         :param center_nodes: ID of center node
@@ -99,13 +99,12 @@ class SBMNodeSampler(NodeSampler):
             self.block2node.indptr, self.block2node.data
         )
 
-    def sampling(self, center_nodes, context_nodes, n_samples, padding_id):
-        _center_nodes = np.repeat(center_nodes, n_samples)
+    def sampling(self, center_nodes, context_nodes, padding_id):
         block_ids = utils.csr_sampling(
-            self.group_membership[_center_nodes], self.block2block
+            self.group_membership[center_nodes], self.block2block
         )
         context = utils.csr_sampling(block_ids, self.block2node)
-        return context.astype(np.int64).reshape((-1, n_samples))
+        return context.astype(np.int64)
 
 
 class ConfigModelNodeSampler(SBMNodeSampler):
@@ -156,12 +155,11 @@ class ConditionalContextSampler(NodeSampler):
         )
         return
 
-    def sampling(self, center_nodes, context_nodes, n_samples, padding_id):
-        _context_nodes = context_nodes.reshape(-1)
-        mask = _context_nodes == padding_id
-        _context_nodes[mask] = 0
+    def sampling(self, center_nodes, context_nodes, padding_id):
+        mask = context_nodes == padding_id
+        context_nodes[mask] = 0
         context = utils.csr_sampling(
-            self.group_membership[_context_nodes], self.block2node
+            self.group_membership[context_nodes], self.block2node
         )
         context[mask] = padding_id
-        return context.astype(np.int64).reshape(context_nodes.shape)
+        return context.astype(np.int64)
