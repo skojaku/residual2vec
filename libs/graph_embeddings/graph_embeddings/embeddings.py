@@ -157,7 +157,7 @@ class Node2Vec(NodeEmbeddings):
 class DeepWalk(Node2Vec):
     def __init__(self, **params):
         Node2Vec.__init__(self, **params)
-        self.w2vparams["sg"] = 0
+        self.w2vparams["sg"] = 1
         self.w2vparams["hs"] = 1
 
 
@@ -230,7 +230,7 @@ class Fairwalk(Node2Vec):
         Node2Vec.__init__(self, **params)
         self.group_membership = group_membership
         self.w2vparams = {
-            "sg": 0,
+            "sg": 1,
             "hs": 1,
             "min_count": 0,
             "workers": 4,
