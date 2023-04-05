@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# @Author: Sadamori Kojaku
+# @Date:   2022-04-20 14:33:08
+# @Last Modified by:   Sadamori Kojaku
+# @Last Modified time: 2023-04-05 17:14:44
 """Embedding module for Residual2Vec.
 
 This module is a modified version of the Word2Vec module in
@@ -64,10 +69,28 @@ class NegativeSampling(nn.Module):
         self.weights = None
         self.logsigmoid = nn.LogSigmoid()
 
-    def forward(self, iword, owords, nwords):
+    def forward(self, iword, owords, nwords, niwords=None):
+        """Loss
+
+        :param iword: center nodes
+        :type iword: torch.Tensor
+        :param owords: context nodes
+        :type owords: torch.Tensor
+        :param nwords: random context nodes
+        :type nwords: torch.Tensor
+        :param niwords: random center nodes, defaults to None. If set to None, the center nodes will be used for computing the negative loss.
+        :type niwords: torch.Tensor, optional
+        :return: _description_
+        :rtype: _type_
+        """
+
         ivectors = self.embedding.forward_i(iword)
         ovectors = self.embedding.forward_o(owords)
         nvectors = self.embedding.forward_o(nwords)
         oloss = self.logsigmoid((ovectors * ivectors).sum(dim=1))
-        nloss = self.logsigmoid((nvectors * ivectors).sum(dim=1).neg())
+        if niwords is None:
+            nloss = self.logsigmoid((nvectors * ivectors).sum(dim=1).neg())
+        elif niwords is not None:
+            nivectors = self.embedding.forward_i(niwords)
+            nloss = self.logsigmoid((nvectors * nivectors).sum(dim=1).neg())
         return -(oloss + nloss).mean()

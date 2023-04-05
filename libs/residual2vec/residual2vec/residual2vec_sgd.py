@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# @Author: Sadamori Kojaku
+# @Date:   2022-04-29 21:31:09
+# @Last Modified by:   Sadamori Kojaku
+# @Last Modified time: 2023-04-05 17:38:21
 """A python implementation of residual2vec based on the stochastic gradient
 descent algorithm. Suitable for large networks.
 
@@ -40,14 +45,17 @@ class CustomNodeSampler(rv.NodeSampler):
         #:type A: scipy.csr_matrix
         pass
 
-    def sampling(self, center_node, n_samples):
-        #Sample context nodes from the graph for center nodes
+    def sampling(self, center_node=None, context_node = None, size = None):
+        # Sample context nodes from the graph for center nodes
         #:param center_node: ID of center node
         #:type center_node: int
-        #:param n_samples: number of samples per center node
-        #:type n_samples: int
+        #:param size: number of samples per center node
+        #:type size: int
         pass
-```
+
+The sampling function should return the random center nodes and random context nodes.
+The size should be the same as center_node if provided, otherwise should follow the specified size by `size`.
+If `center_node` is provided, the returned center_node should be the same. The function is expected to produce random context nodes conditioned on the center nodes. If not provided, however, the center nodes need to be sampled from the given network
 """
 import random
 
@@ -90,6 +98,7 @@ class residual2vec_sgd:
         buffer_size=100000,
         context_window_type="double",
         miniters=200,
+        learn_joint_probability=False,
     ):
         """Residual2Vec based on the stochastic gradient descent.
 
@@ -113,6 +122,8 @@ class residual2vec_sgd:
         :type context_window_type: str, optional
         :param miniter: Minimum number of iterations, defaults to 200
         :type miniter: int, optional
+        :param learn_joint_probability: Set `learn_joint_probability=True` to learn the joint probability P(i,j) of random walks, instead of transition probability, P(j | i). Default to False.
+        :type learn_joint_probability: bool, optional
         """
         self.window_length = window_length
         self.sampler = noise_sampler
@@ -125,6 +136,7 @@ class residual2vec_sgd:
         self.buffer_size = buffer_size
         self.miniters = miniters
         self.context_window_type = context_window_type
+        self.learn_joint_probability = learn_joint_probability
 
     def fit(self, adjmat):
         """Learn the graph structure to generate the node embeddings.
@@ -184,6 +196,7 @@ class residual2vec_sgd:
             q=self.q,
             buffer_size=self.buffer_size,
             context_window_type=self.context_window_type,
+            learn_joint_probability=self.learn_joint_probability,
         )
         dataloader = DataLoader(
             dataset,
@@ -197,12 +210,12 @@ class residual2vec_sgd:
         optim = Adam(model.parameters(), lr=0.003)
         # scaler = torch.cuda.amp.GradScaler()
         pbar = tqdm(dataloader, miniters=100)
-        for iword, owords, nwords in pbar:
+        for batch in pbar:
             # optim.zero_grad()
             for param in model.parameters():
                 param.grad = None
             # with torch.cuda.amp.autocast():
-            loss = neg_sampling(iword, owords, nwords)
+            loss = neg_sampling(*batch)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
             optim.step()
@@ -228,6 +241,7 @@ class TripletDataset(Dataset):
         q=1.0,
         context_window_type="double",
         buffer_size=100000,
+        learn_joint_probability=True,
     ):
         """Dataset for training word2vec with negative sampling.
 
@@ -251,6 +265,8 @@ class TripletDataset(Dataset):
         :type context_window_type: str, optional
         :param buffer_size: Buffer size for sampled center and context pairs, defaults to 10000
         :type buffer_size: int, optional
+        :param learn_joint_probability: If set True, the dataset will additionally generate the random center nodes as return it at the fourth variable.
+        :type learn_joint_probability: bool, optional
         """
         self.adjmat = adjmat
         self.num_walks = num_walks
@@ -258,6 +274,7 @@ class TripletDataset(Dataset):
         self.noise_sampler = noise_sampler
         self.walk_length = walk_length
         self.padding_id = padding_id
+        self.learn_joint_probability = learn_joint_probability
         self.context_window_type = {"double": 0, "left": -1, "right": 1}[
             context_window_type
         ]
@@ -278,6 +295,7 @@ class TripletDataset(Dataset):
         self.buffer_size = buffer_size
         self.contexts = None
         self.centers = None
+        self.random_centers = None
         self.random_contexts = None
 
         # Initialize
@@ -296,7 +314,11 @@ class TripletDataset(Dataset):
 
         self.sample_id += 1
 
-        return center, cont, rand_cont
+        if self.learn_joint_probability:
+            rand_center = self.random_centers[self.sample_id].astype(np.int64)
+            return center, cont, rand_cont, rand_center
+        else:
+            return center, cont, rand_cont
 
     def _generate_samples(self):
         next_scanned_node_id = np.minimum(
@@ -313,10 +335,9 @@ class TripletDataset(Dataset):
             window_length=self.window_length,
             padding_id=self.padding_id,
         )
-        self.random_contexts = self.noise_sampler.sampling(
-            center_nodes=self.centers,
-            context_nodes=self.contexts,
-            padding_id=self.padding_id,
+        self.random_centers, self.random_contexts = self.noise_sampler.sampling(
+            center_nodes=None if self.learn_joint_probability else self.centers,
+            size=len(self.centers),
         )
         self.n_sampled = len(self.centers)
         self.scanned_node_id = next_scanned_node_id % self.n_nodes
