@@ -50,6 +50,15 @@ class TestResidual2Vec(unittest.TestCase):
 
         assert vec.shape[1] == 32
         assert vec.shape[0] == self.A.shape[0]
+    
+
+    def test_sgd_fit_transform_joint_prob(self):
+        noise_sampler = rv.ConfigModelNodeSampler()
+        model = rv.residual2vec_sgd(noise_sampler, learn_joint_probability=True)
+        vec = model.fit(self.A).transform(dim=32)
+
+        assert vec.shape[1] == 32
+        assert vec.shape[0] == self.A.shape[0]
 
     def test_sgd_random_graphs(self):
         group_membership = np.random.choice(3, self.A.shape[0], replace=True)

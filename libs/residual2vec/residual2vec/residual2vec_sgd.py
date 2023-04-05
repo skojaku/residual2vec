@@ -2,7 +2,7 @@
 # @Author: Sadamori Kojaku
 # @Date:   2022-04-29 21:31:09
 # @Last Modified by:   Sadamori Kojaku
-# @Last Modified time: 2023-04-05 17:38:21
+# @Last Modified time: 2023-04-05 17:51:30
 """A python implementation of residual2vec based on the stochastic gradient
 descent algorithm. Suitable for large networks.
 
@@ -312,12 +312,13 @@ class TripletDataset(Dataset):
         cont = self.contexts[self.sample_id].astype(np.int64)
         rand_cont = self.random_contexts[self.sample_id].astype(np.int64)
 
-        self.sample_id += 1
-
         if self.learn_joint_probability:
             rand_center = self.random_centers[self.sample_id].astype(np.int64)
+            self.sample_id += 1
+
             return center, cont, rand_cont, rand_center
         else:
+            self.sample_id += 1
             return center, cont, rand_cont
 
     def _generate_samples(self):
