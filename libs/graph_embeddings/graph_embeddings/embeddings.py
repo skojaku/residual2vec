@@ -109,7 +109,7 @@ class Node2Vec(NodeEmbeddings):
         self.w2vparams = {
             "sg": 1,
             "min_count": 0,
-            "epochs": 1,
+            "iter": 1,
             "workers": 4,
         }
 
@@ -139,25 +139,23 @@ class Node2Vec(NodeEmbeddings):
             self.sampler.walks, self.sampler.window_length
         )
 
-        self.w2vparams["vector_size"] = dim
+        self.w2vparams["size"] = dim
         self.model = gensim.models.Word2Vec(sentences=self.sentences, **self.w2vparams)
 
-        num_nodes = len(self.model.wv.key_to_index)
+        num_nodes = self.model.wv.vectors.shape[0]
         self.in_vec = np.zeros((num_nodes, dim))
         self.out_vec = np.zeros((num_nodes, dim))
         for i in range(num_nodes):
             if "%d" % i not in self.model.wv:
                 continue
             self.in_vec[i, :] = self.model.wv["%d" % i]
-            self.out_vec[i, :] = self.model.syn1neg[
-                self.model.wv.key_to_index["%d" % i]
-            ]
+            self.out_vec[i, :] = self.model.syn1neg[i]
 
 
 class DeepWalk(Node2Vec):
     def __init__(self, **params):
         Node2Vec.__init__(self, **params)
-        self.w2vparams["sg"] = 0
+        self.w2vparams["sg"] = 1
         self.w2vparams["hs"] = 1
 
 
@@ -230,7 +228,7 @@ class Fairwalk(Node2Vec):
         Node2Vec.__init__(self, **params)
         self.group_membership = group_membership
         self.w2vparams = {
-            "sg": 0,
+            "sg": 1,
             "hs": 1,
             "min_count": 0,
             "workers": 4,

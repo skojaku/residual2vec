@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# @Author: Sadamori Kojaku
+# @Date:   2022-07-17 14:00:09
+# @Last Modified by:   Sadamori Kojaku
+# @Last Modified time: 2023-04-05 16:36:02
 # %%
 import graph_tool.all as gt
 import sys, os
@@ -264,5 +269,4 @@ fig, axes = plt.subplots(figsize=(15, 5), ncols=3)
 
 for i, (k, v) in enumerate(embs.items()):
     X = embs[k]
-    ax = sns.heatmap(X @ X.T, ax=axes[i], cmap = "coolwarm")
-
+    ax = sns.heatmap(X @ X.T, ax=axes[i], cmap="coolwarm")
