@@ -2,7 +2,7 @@
 # @Author: Sadamori Kojaku
 # @Date:   2022-04-29 21:31:09
 # @Last Modified by:   Sadamori Kojaku
-# @Last Modified time: 2023-04-07 11:31:07
+# @Last Modified time: 2023-04-07 12:28:22
 """A python implementation of residual2vec based on the stochastic gradient
 descent algorithm. Suitable for large networks.
 
@@ -99,6 +99,7 @@ class residual2vec_sgd:
         context_window_type="double",
         miniters=200,
         learn_joint_probability=False,
+        unconnected_negatives=False,
     ):
         """Residual2Vec based on the stochastic gradient descent.
 
@@ -124,6 +125,8 @@ class residual2vec_sgd:
         :type miniter: int, optional
         :param learn_joint_probability: Set `learn_joint_probability=True` to learn the joint probability P(i,j) of random walks, instead of transition probability, P(j | i). Default to False.
         :type learn_joint_probability: bool, optional
+        :param unconnected_negatives: If set True, we sample the unconnected node pairs.
+        :type unconnected_negatives: bool, optional
         """
         self.window_length = window_length
         self.sampler = noise_sampler
@@ -137,6 +140,7 @@ class residual2vec_sgd:
         self.miniters = miniters
         self.context_window_type = context_window_type
         self.learn_joint_probability = learn_joint_probability
+        self.unconnected_negatives = unconnected_negatives
 
     def fit(self, adjmat):
         """Learn the graph structure to generate the node embeddings.
@@ -200,6 +204,7 @@ class residual2vec_sgd:
             buffer_size=self.buffer_size,
             context_window_type=self.context_window_type,
             learn_joint_probability=self.learn_joint_probability,
+            unconnected_negatives=self.unconnected_negatives,
         )
         dataloader = DataLoader(
             dataset,
@@ -249,6 +254,7 @@ class TripletDataset(Dataset):
         context_window_type="double",
         buffer_size=100000,
         learn_joint_probability=True,
+        unconnected_negatives=False,
     ):
         """Dataset for training word2vec with negative sampling.
 
@@ -274,6 +280,8 @@ class TripletDataset(Dataset):
         :type buffer_size: int, optional
         :param learn_joint_probability: If set True, the dataset will additionally generate the random center nodes as return it at the fourth variable.
         :type learn_joint_probability: bool, optional
+        :param unconnected_negatives: If set True, we sample the unconnected node pairs.
+        :type unconnected_negatives: bool, optional
         """
         self.adjmat = adjmat
         self.num_walks = num_walks
@@ -282,6 +290,7 @@ class TripletDataset(Dataset):
         self.walk_length = walk_length
         self.padding_id = padding_id
         self.learn_joint_probability = learn_joint_probability
+        self.unconnected_negatives = unconnected_negatives
         self.context_window_type = {"double": 0, "left": -1, "right": 1}[
             context_window_type
         ]
@@ -347,6 +356,20 @@ class TripletDataset(Dataset):
             center_nodes=None if self.learn_joint_probability else self.centers,
             size=len(self.centers),
         )
+
+        if self.unconnected_negatives:
+            s = (
+                np.array(
+                    self.adjmat[(self.random_centers, self.random_contexts)]
+                ).reshape(-1)
+                == 0
+            )
+            self.random_centers, self.random_contexts = (
+                self.random_centers[s],
+                self.random_contexts[s],
+            )
+            self.centers, self.contexts = self.centers[s], self.contexts[s]
+
         self.n_sampled = len(self.centers)
         self.scanned_node_id = next_scanned_node_id % self.n_nodes
         self.sample_id = 0
