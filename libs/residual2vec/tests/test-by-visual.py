@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# @Author: Sadamori Kojaku
+# @Date:   2022-04-19 20:22:52
+# @Last Modified by:   Sadamori Kojaku
+# @Last Modified time: 2023-04-07 11:26:23
 """Test by visual inspection of the generated embeddings."""
 # %%
 import matplotlib.pyplot as plt
@@ -32,6 +37,7 @@ model = rv.residual2vec_sgd(
     window_length=50,
     noise_sampler=rv.ConfigModelNodeSampler(),
     context_window_type="right",
+    device="cuda:0",
 )
 emb = model.fit(A).transform(dim=5)
 
