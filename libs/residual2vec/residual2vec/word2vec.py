@@ -2,7 +2,7 @@
 # @Author: Sadamori Kojaku
 # @Date:   2022-04-20 14:33:08
 # @Last Modified by:   Sadamori Kojaku
-# @Last Modified time: 2023-04-05 17:14:44
+# @Last Modified time: 2023-04-07 11:30:33
 """Embedding module for Residual2Vec.
 
 This module is a modified version of the Word2Vec module in
@@ -15,8 +15,9 @@ from torch import FloatTensor, LongTensor
 
 
 class Word2Vec(nn.Module):
-    def __init__(self, vocab_size, embedding_size, padding_idx):
+    def __init__(self, vocab_size, embedding_size, padding_idx, device):
         super(Word2Vec, self).__init__()
+        self.device = device
         self.vocab_size = vocab_size
         self.embedding_size = embedding_size
         self.ivectors = nn.Embedding(
@@ -47,19 +48,20 @@ class Word2Vec(nn.Module):
         )
         self.ivectors.weight.requires_grad = True
         self.ovectors.weight.requires_grad = True
+        self.to(self.device)
 
     def forward(self, data):
         return self.forward_i(data)
 
     def forward_i(self, data):
-        v = LongTensor(data)
-        v = v.cuda() if self.ivectors.weight.is_cuda else v
-        return self.ivectors(v)
+        # v = LongTensor(data).to(self.device)
+        # v = v.cuda() if self.ivectors.weight.is_cuda else v
+        return self.ivectors(data)
 
     def forward_o(self, data):
-        v = LongTensor(data)
-        v = v.cuda() if self.ovectors.weight.is_cuda else v
-        return self.ovectors(v)
+        # v = LongTensor(data).to(self.device)
+        # v = v.cuda() if self.ovectors.weight.is_cuda else v
+        return self.ovectors(data)
 
 
 class NegativeSampling(nn.Module):

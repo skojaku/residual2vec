@@ -2,7 +2,7 @@
 # @Author: Sadamori Kojaku
 # @Date:   2022-04-29 21:31:09
 # @Last Modified by:   Sadamori Kojaku
-# @Last Modified time: 2023-04-05 17:51:30
+# @Last Modified time: 2023-04-07 11:31:07
 """A python implementation of residual2vec based on the stochastic gradient
 descent algorithm. Suitable for large networks.
 
@@ -94,7 +94,7 @@ class residual2vec_sgd:
         walk_length=40,
         p=1,
         q=1,
-        cuda=False,
+        device="cpu",
         buffer_size=100000,
         context_window_type="double",
         miniters=200,
@@ -127,7 +127,7 @@ class residual2vec_sgd:
         """
         self.window_length = window_length
         self.sampler = noise_sampler
-        self.cuda = cuda
+        self.device = device
         self.num_walks = num_walks
         self.walk_length = walk_length
         self.p = p
@@ -169,11 +169,14 @@ class residual2vec_sgd:
         # Set up the embedding model
         PADDING_IDX = self.n_nodes
         model = Word2Vec(
-            vocab_size=self.n_nodes + 1, embedding_size=dim, padding_idx=PADDING_IDX
+            vocab_size=self.n_nodes + 1,
+            embedding_size=dim,
+            padding_idx=PADDING_IDX,
+            device=self.device,
         )
         neg_sampling = NegativeSampling(embedding=model)
-        if self.cuda:
-            model = model.cuda()
+        if self.device != "cpu":
+            model = model.to(self.device)
 
         # Set up the Training dataset
         adjusted_num_walks = np.ceil(
@@ -214,7 +217,11 @@ class residual2vec_sgd:
             # optim.zero_grad()
             for param in model.parameters():
                 param.grad = None
+
+            for i in range(len(batch)):
+                batch[i] = batch[i].to(self.device)
             # with torch.cuda.amp.autocast():
+
             loss = neg_sampling(*batch)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
