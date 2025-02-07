@@ -2,7 +2,7 @@
 # @Author: Sadamori Kojaku
 # @Date:   2022-04-29 21:31:09
 # @Last Modified by:   Sadamori Kojaku
-# @Last Modified time: 2023-04-07 11:31:07
+# @Last Modified time: 2023-04-13 10:43:33
 """A python implementation of residual2vec based on the stochastic gradient
 descent algorithm. Suitable for large networks.
 
@@ -69,7 +69,7 @@ from tqdm import tqdm
 
 from residual2vec import utils
 from residual2vec.random_walk_sampler import RandomWalkSampler
-from residual2vec.word2vec import NegativeSampling, Word2Vec
+from residual2vec.word2vec import NegativeSampling, Word2Vec, Word2VecRP
 
 
 class residual2vec_sgd:
@@ -99,6 +99,7 @@ class residual2vec_sgd:
         context_window_type="double",
         miniters=200,
         learn_joint_probability=False,
+        RP=False,
     ):
         """Residual2Vec based on the stochastic gradient descent.
 
@@ -137,6 +138,7 @@ class residual2vec_sgd:
         self.miniters = miniters
         self.context_window_type = context_window_type
         self.learn_joint_probability = learn_joint_probability
+        self.RP = RP
 
     def fit(self, adjmat):
         """Learn the graph structure to generate the node embeddings.
@@ -168,12 +170,22 @@ class residual2vec_sgd:
 
         # Set up the embedding model
         PADDING_IDX = self.n_nodes
-        model = Word2Vec(
-            vocab_size=self.n_nodes + 1,
-            embedding_size=dim,
-            padding_idx=PADDING_IDX,
-            device=self.device,
-        )
+        if self.RP:
+            model = Word2VecRP(
+                vocab_size=self.n_nodes,
+                embedding_size=dim,
+                padding_idx=PADDING_IDX,
+                device=self.device,
+                net=self.adjmat,
+            )
+        else:
+            model = Word2Vec(
+                vocab_size=self.n_nodes,
+                embedding_size=dim,
+                padding_idx=PADDING_IDX,
+                device=self.device,
+            )
+        model.train()
         neg_sampling = NegativeSampling(embedding=model)
         if self.device != "cpu":
             model = model.to(self.device)
@@ -228,8 +240,18 @@ class residual2vec_sgd:
             optim.step()
             pbar.set_postfix(loss=loss.item())
 
-        self.in_vec = model.ivectors.weight.data.cpu().numpy()[:PADDING_IDX, :]
-        self.out_vec = model.ovectors.weight.data.cpu().numpy()[:PADDING_IDX, :]
+        model.eval()
+        model.to("cpu")
+        self.in_vec = (
+            model.forward_i(torch.arange(self.n_nodes))
+            .detach()
+            .numpy()[:PADDING_IDX, :]
+        )
+        self.out_vec = (
+            model.forward_o(torch.arange(self.n_nodes))
+            .detach()
+            .numpy()[:PADDING_IDX, :]
+        )
         return self.in_vec
 
 
